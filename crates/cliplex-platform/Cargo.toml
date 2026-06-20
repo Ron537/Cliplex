@@ -11,9 +11,14 @@ serde = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
 cliplex-core = { path = "../cliplex-core" }
-arboard = "3"
 blake3 = "1.8.5"
 enigo = "0.6.1"
+
+# Portable clipboard fallback is only needed off macOS (where the native
+# NSPasteboard backend is used). Keeping it target-specific shrinks the macOS
+# build by dropping arboard and its image-decoding dependencies.
+[target.'cfg(not(target_os = "macos"))'.dependencies]
+arboard = "3"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6.4"
