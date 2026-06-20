@@ -18,9 +18,10 @@ CERT_NAME="Cliplex Dev (self-signed)"
 APP_PATH="${1:-target/release/bundle/macos/Cliplex.app}"
 ENTITLEMENTS="src-tauri/entitlements/cliplex.entitlements"
 
-if [[ ! -d "$APP_PATH" ]]; then
-  echo "error: app bundle not found at: $APP_PATH" >&2
-  echo "Build it first with: npm run tauri build" >&2
+if [[ ! -e "$APP_PATH" ]]; then
+  echo "error: nothing to sign at: $APP_PATH" >&2
+  echo "Build it first (e.g. 'npm run tauri build' for the .app, or" >&2
+  echo "'cargo build --manifest-path src-tauri/Cargo.toml' for the dev binary)." >&2
   exit 1
 fi
 
