@@ -53,10 +53,33 @@ npm run tauri dev     # run in development
 npm run tauri build   # produce an installer for your platform
 ```
 
-### First-run permissions
+### First-run permissions (macOS)
 To paste into other apps, Cliplex synthesizes the paste shortcut, which requires
-**Accessibility** permission on macOS (System Settings → Privacy & Security →
-Accessibility). On Linux/Wayland, input injection may require a compositor helper.
+**Accessibility** permission (System Settings → Privacy & Security → Accessibility).
+
+1. The first time you trigger a paste, Cliplex asks for Accessibility permission
+   (once — it won't nag you on every paste).
+2. Enable **Cliplex** in the Accessibility list.
+3. **Quit and reopen Cliplex** so it picks up the new permission.
+
+Until permission is granted, selecting an item still **copies it to the
+clipboard**, so you can always paste manually with <kbd>⌘V</kbd>. The panel shows a
+small banner with a **Grant…** button while permission is missing.
+
+> **Permission keeps getting asked after every rebuild?** Unsigned/ad-hoc builds
+> get a new code identity each time you rebuild, so macOS forgets the grant. For a
+> permission that *persists across rebuilds*, sign the app with a stable
+> self-signed certificate:
+>
+> ```bash
+> npm run tauri build
+> ./scripts/dev-sign-macos.sh        # creates a cert once, then signs the .app
+> ```
+>
+> Then remove any stale "Cliplex" entry from the Accessibility list, grant once,
+> and relaunch. To clear a stuck entry: `tccutil reset Accessibility com.rborysowski.cliplex`.
+
+On Linux/Wayland, input injection may require a compositor helper.
 
 ## Architecture
 

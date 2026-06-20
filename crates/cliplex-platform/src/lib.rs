@@ -25,6 +25,9 @@ pub use capture::{should_store, CaptureConfig};
 mod inject;
 pub use inject::inject_paste;
 
+mod accessibility;
+pub use accessibility::{is_trusted, prompt_for_trust};
+
 /// Uniform-type identifier used for plain UTF-8 text across platforms.
 pub const UTI_TEXT: &str = "public.utf8-plain-text";
 /// Uniform-type identifier used for PNG image data.
@@ -76,6 +79,9 @@ pub enum PlatformError {
     /// The operation is not supported on this platform/build yet.
     #[error("operation not supported on this platform")]
     Unsupported,
+    /// Accessibility / input-monitoring permission has not been granted.
+    #[error("accessibility permission not granted")]
+    NotTrusted,
     /// A backend-specific failure.
     #[error("platform error: {0}")]
     Other(String),

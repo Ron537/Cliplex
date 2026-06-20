@@ -584,6 +584,7 @@ dependencies = [
  "arboard",
  "blake3",
  "cliplex-core",
+ "core-foundation",
  "enigo",
  "objc2",
  "objc2-app-kit",
