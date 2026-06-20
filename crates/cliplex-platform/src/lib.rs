@@ -19,6 +19,9 @@ use cliplex_core::{ClipAsset, ClipKind, NewClip};
 mod backend;
 pub use backend::backend;
 
+mod capture;
+pub use capture::{should_store, CaptureConfig};
+
 /// Uniform-type identifier used for plain UTF-8 text across platforms.
 pub const UTI_TEXT: &str = "public.utf8-plain-text";
 /// Uniform-type identifier used for PNG image data.
