@@ -1,0 +1,16 @@
+# Node
+node_modules/
+dist/
+
+# Rust / Cargo
+/target/
+**/target/
+
+# Tauri generated schemas
+src-tauri/gen/schemas/
+
+# OS / editor
+.DS_Store
+*.log
+.vscode/*
+!.vscode/extensions.json

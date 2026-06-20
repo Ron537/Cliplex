@@ -1,0 +1,24 @@
+[workspace]
+resolver = "2"
+members = ["src-tauri", "crates/cliplex-core", "crates/cliplex-platform"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["Ron Borysowski"]
+repository = "https://github.com/Ron537/cliplex"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+thiserror = "2"
+
+# Release profile tuned for a small, fast binary.
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

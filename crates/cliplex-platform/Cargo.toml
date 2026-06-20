@@ -1,0 +1,13 @@
+[package]
+name = "cliplex-platform"
+description = "Cliplex platform layer: OS-specific clipboard monitoring, concealed-type detection, and paste injection"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+cliplex-core = { path = "../cliplex-core" }
