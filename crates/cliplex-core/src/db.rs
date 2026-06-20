@@ -83,7 +83,10 @@ impl Database {
             return Err(Error::Invalid("clip has no assets".into()));
         }
         let hash = hash_assets(&new.assets);
-        let now = now_ms();
+        // Strictly-increasing recency stamp so most-recently-used ordering is
+        // deterministic even when multiple clips arrive within the same
+        // millisecond (real wall-clock time is kept for created_at).
+        let now = self.next_recency()?;
 
         if let Some(id) = self.clip_id_by_hash(&hash)? {
             self.conn.execute(
@@ -111,6 +114,17 @@ impl Database {
         }
         tx.commit()?;
         self.get_clip(clip_id)
+    }
+
+    /// Returns a strictly-increasing recency value: at least the current time in
+    /// milliseconds, but always greater than the newest existing `updated_at`.
+    fn next_recency(&self) -> Result<i64> {
+        let max: i64 =
+            self.conn
+                .query_row("SELECT COALESCE(MAX(updated_at), 0) FROM clips", [], |r| {
+                    r.get(0)
+                })?;
+        Ok(now_ms().max(max + 1))
     }
 
     fn clip_id_by_hash(&self, hash: &str) -> Result<Option<i64>> {
@@ -142,7 +156,7 @@ impl Database {
         let mut stmt = self.conn.prepare(
             "SELECT id, content_hash, kind, preview, source_app, pinned, created_at, updated_at
              FROM clips
-             ORDER BY pinned DESC, updated_at DESC
+             ORDER BY pinned DESC, updated_at DESC, id DESC
              LIMIT ?1 OFFSET ?2",
         )?;
         let rows = stmt.query_map(params![limit, offset], map_clip)?;
@@ -160,7 +174,7 @@ impl Database {
              FROM clips c
              JOIN clips_fts f ON c.id = f.rowid
              WHERE clips_fts MATCH ?1
-             ORDER BY c.pinned DESC, bm25(clips_fts), c.updated_at DESC
+             ORDER BY c.pinned DESC, bm25(clips_fts), c.updated_at DESC, c.id DESC
              LIMIT ?2",
         )?;
         let rows = stmt.query_map(params![fts, limit], map_clip)?;
@@ -223,7 +237,7 @@ impl Database {
              WHERE pinned = 0
                AND id NOT IN (
                  SELECT id FROM clips WHERE pinned = 0
-                 ORDER BY updated_at DESC LIMIT ?1
+                 ORDER BY updated_at DESC, id DESC LIMIT ?1
                )",
             params![max_items.max(0)],
         )?;
