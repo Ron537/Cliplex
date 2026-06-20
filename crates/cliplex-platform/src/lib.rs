@@ -28,6 +28,9 @@ pub use inject::inject_paste;
 mod accessibility;
 pub use accessibility::{is_trusted, prompt_for_trust};
 
+mod focus;
+pub use focus::{activate_pid, frontmost_pid};
+
 /// Uniform-type identifier used for plain UTF-8 text across platforms.
 pub const UTI_TEXT: &str = "public.utf8-plain-text";
 /// Uniform-type identifier used for PNG image data.
