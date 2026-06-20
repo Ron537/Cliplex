@@ -26,6 +26,7 @@ Press the global hotkey to summon the panel anywhere:
 | Paste selected | <kbd>Enter</kbd> |
 | Quick-paste Nth item | <kbd>⌘</kbd>/<kbd>Ctrl</kbd> + <kbd>1</kbd>–<kbd>9</kbd> |
 | Pin / unpin clip | <kbd>⌘</kbd>/<kbd>Ctrl</kbd> + <kbd>P</kbd> |
+| Save selected clip as snippet | <kbd>⌘</kbd>/<kbd>Ctrl</kbd> + <kbd>S</kbd> |
 | Switch filter (all / clipboard / snippets) | <kbd>Tab</kbd> |
 | Close panel | <kbd>Esc</kbd> |
 
