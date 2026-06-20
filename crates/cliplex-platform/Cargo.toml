@@ -11,3 +11,19 @@ serde = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
 cliplex-core = { path = "../cliplex-core" }
+arboard = "3"
+blake3 = "1.8.5"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6.4"
+objc2-app-kit = { version = "0.3.2", features = [
+    "NSPasteboard",
+    "NSWorkspace",
+    "NSRunningApplication",
+] }
+objc2-foundation = { version = "0.3.2", features = [
+    "NSString",
+    "NSArray",
+    "NSData",
+    "NSEnumerator",
+] }
