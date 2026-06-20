@@ -22,6 +22,9 @@ pub use backend::backend;
 mod capture;
 pub use capture::{should_store, CaptureConfig};
 
+mod inject;
+pub use inject::inject_paste;
+
 /// Uniform-type identifier used for plain UTF-8 text across platforms.
 pub const UTI_TEXT: &str = "public.utf8-plain-text";
 /// Uniform-type identifier used for PNG image data.
