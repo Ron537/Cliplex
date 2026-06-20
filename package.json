@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "build:mac-signed": "tauri build && ./scripts/dev-sign-macos.sh"
   },
   "dependencies": {
     "solid-js": "^1.9.3",

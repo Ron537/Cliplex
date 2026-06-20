@@ -51,17 +51,11 @@ EOF
     -out "$TMP_DIR/cert.p12" -passout "pass:$P12_PASS" \
     -macalg sha1 -keypbe PBE-SHA1-3DES -certpbe PBE-SHA1-3DES >/dev/null 2>&1
   security import "$TMP_DIR/cert.p12" -k ~/Library/Keychains/login.keychain-db \
-    -P "$P12_PASS" -T /usr/bin/codesign
+    -P "$P12_PASS" -A
   rm -rf "$TMP_DIR"
   echo "Certificate created."
-  echo
-  echo "NOTE: the first time you sign, macOS shows a keychain dialog asking to"
-  echo "      use the signing key — click \"Always Allow\". (To avoid the dialog"
-  echo "      entirely you may run, with your login password:"
-  echo "        security set-key-partition-list -S apple-tool:,apple: -s \\"
-  echo "          -k <login-password> ~/Library/Keychains/login.keychain-db )"
-  echo "(codesign may also warn about an untrusted root — that is expected and"
-  echo " does not affect signing or Accessibility-permission persistence.)"
+  echo "(codesign may warn about an untrusted root — that is expected and does"
+  echo " not affect signing or Accessibility-permission persistence.)"
 fi
 
 # 2. Sign the app (deep) with a stable identifier and entitlements.

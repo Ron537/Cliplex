@@ -66,18 +66,26 @@ Until permission is granted, selecting an item still **copies it to the
 clipboard**, so you can always paste manually with <kbd>⌘V</kbd>. The panel shows a
 small banner with a **Grant…** button while permission is missing.
 
-> **Permission keeps getting asked after every rebuild?** Unsigned/ad-hoc builds
-> get a new code identity each time you rebuild, so macOS forgets the grant. For a
-> permission that *persists across rebuilds*, sign the app with a stable
-> self-signed certificate:
+> **Permission keeps getting asked after every rebuild?** Plain (ad-hoc) builds
+> get a new code identity each time you rebuild, so macOS forgets the grant. For
+> a permission that *persists across rebuilds*, build the app **signed with a
+> stable self-signed certificate**:
 >
 > ```bash
-> npm run tauri build
-> ./scripts/dev-sign-macos.sh        # creates a cert once, then signs the .app
+> npm run build:mac-signed     # tauri build + sign with a stable self-signed cert
 > ```
 >
-> Then remove any stale "Cliplex" entry from the Accessibility list, grant once,
-> and relaunch. To clear a stuck entry: `tccutil reset Accessibility com.rborysowski.cliplex`.
+> The first run creates a `Cliplex Dev (self-signed)` certificate in your login
+> keychain; subsequent builds reuse it, so the code identity (Designated
+> Requirement) stays stable and the Accessibility grant sticks. If you previously
+> granted an ad-hoc build, clear the stale entry once:
+>
+> ```bash
+> tccutil reset Accessibility com.rborysowski.cliplex
+> ```
+>
+> then grant Accessibility to the signed app and relaunch. (Plain `npm run tauri
+> build` still works but is ad-hoc signed, so the grant is lost on each rebuild.)
 
 On Linux/Wayland, input injection may require a compositor helper.
 
