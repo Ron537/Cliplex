@@ -31,6 +31,11 @@ pub use accessibility::{is_trusted, prompt_for_trust};
 mod focus;
 pub use focus::{activate_pid, frontmost_pid};
 
+#[cfg(target_os = "macos")]
+mod position;
+#[cfg(target_os = "macos")]
+pub use position::position_window_top_left_at_cursor;
+
 /// Uniform-type identifier used for plain UTF-8 text across platforms.
 pub const UTI_TEXT: &str = "public.utf8-plain-text";
 /// Uniform-type identifier used for PNG image data.

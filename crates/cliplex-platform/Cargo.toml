@@ -27,10 +27,15 @@ objc2-app-kit = { version = "0.3.2", features = [
     "NSPasteboard",
     "NSWorkspace",
     "NSRunningApplication",
+    "NSEvent",
+    "NSScreen",
+    "NSWindow",
+    "NSResponder",
 ] }
 objc2-foundation = { version = "0.3.2", features = [
     "NSString",
     "NSArray",
     "NSData",
     "NSEnumerator",
+    "NSGeometry",
 ] }
