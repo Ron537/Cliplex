@@ -585,6 +585,7 @@ dependencies = [
  "blake3",
  "cliplex-core",
  "core-foundation",
+ "core-graphics",
  "enigo",
  "objc2",
  "objc2-app-kit",
