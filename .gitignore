@@ -13,3 +13,6 @@ DerivedData/
 *.log
 .vscode/*
 !.vscode/extensions.json
+
+# Local-only docs (research, design references)
+docs/
