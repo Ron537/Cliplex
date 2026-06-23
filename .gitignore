@@ -1,13 +1,12 @@
-# Node
-node_modules/
-dist/
+# SwiftPM
+.build/
+build/
 
-# Rust / Cargo
-/target/
-**/target/
-
-# Tauri generated schemas
-src-tauri/gen/schemas/
+# Xcode (if ever opened)
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+DerivedData/
 
 # OS / editor
 .DS_Store

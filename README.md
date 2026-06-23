@@ -1,149 +1,76 @@
 # Cliplex
 
-**Cliplex** is a fast, private, cross-platform **clipboard manager** — clipboard
-history and snippets in a single panel with **instant unified search**. A modern,
-lightweight take on tools like Clipy.
+A lightweight, privacy-first **clipboard history + snippets** manager for macOS.
+A fast, native menu-bar app: instant full-text search, a panel that opens right
+at your cursor, snippet folders, and one-keystroke paste. No telemetry, nothing
+leaves your machine.
 
-> _Cliplex = **Clip**board + multi**plex**._
+## Highlights
 
-- ⚡️ **Fast & tiny** — Rust core + SQLite/FTS5 search + a ~38 KB SolidJS UI in a
-  Tauri shell. The macOS app bundle is **~4.4 MB** (vs ~150 MB for Electron apps).
-- 🔎 **One panel, instant search** — history and snippets together; just start
-  typing to filter, press <kbd>Enter</kbd> to paste.
-- 🧩 **Snippets** — reusable text organised into folders.
-- 🔒 **Private by default** — no telemetry, no network. Password/concealed clips
-  and common password managers are ignored automatically. See [PRIVACY.md](./PRIVACY.md).
-- 🖥 **Cross-platform** — macOS, Windows, and Linux from one codebase.
+- **Clipboard history** — text, rich text, images, files, and color swatches,
+  with most-recently-used ordering and pinning.
+- **Snippets** — reusable text organized into folders, shown as a collapsible
+  tree.
+- **Instant search** — SQLite FTS5 as-you-type over both history and snippets.
+- **Cursor-anchored panel** — a non-activating panel that opens where your mouse
+  is and never steals focus, so paste lands in the app you were using.
+- **Quick paste** — ⌘1–⌘0 for the top items; ⏎ to paste the selection.
+- **Privacy by default** — concealed/password clips and configured apps are
+  never stored; the database is entirely local.
 
-## Usage
+## Stack
 
-Press the global hotkey to summon the panel anywhere:
+- **Swift** (Swift Package Manager), macOS 14+
+- **AppKit** menu-bar agent + **SwiftUI** content
+- **[GRDB.swift](https://github.com/groue/GRDB.swift)** — SQLite + FTS5
+- No App Sandbox (a clipboard manager must read the global pasteboard and
+  synthesize ⌘V via Accessibility)
 
-| Action | Shortcut |
-|--------|----------|
-| Open / close the panel | <kbd>⌘⇧V</kbd> (macOS) · <kbd>Ctrl⇧V</kbd> (Windows/Linux) |
-| Move selection | <kbd>↑</kbd> / <kbd>↓</kbd> |
-| Paste selected | <kbd>Enter</kbd> |
-| Quick-paste Nth item | <kbd>⌘</kbd>/<kbd>Ctrl</kbd> + <kbd>1</kbd>–<kbd>9</kbd> |
-| Pin / unpin clip | <kbd>⌘</kbd>/<kbd>Ctrl</kbd> + <kbd>P</kbd> |
-| Save selected clip as snippet | <kbd>⌘</kbd>/<kbd>Ctrl</kbd> + <kbd>S</kbd> |
-| Switch filter (all / clipboard / snippets) | <kbd>Tab</kbd> |
-| Close panel | <kbd>Esc</kbd> |
+## Project layout
 
-Start typing at any time to search. Manage snippets and preferences from the tray
-menu → **Snippets & Settings…**.
+| Path | Purpose |
+|------|---------|
+| `Sources/CliplexKit/` | Testable, UI-independent core: storage (`Database`), models, FTS `Search`, `MacClipboard`, `ClipboardMonitor`, `Capture` (privacy filter), `Settings`, `Accessibility`, `Paste` (CGEvent ⌘V), `PanelLayout` |
+| `Sources/Cliplex/` | The menu-bar app: status item, `CarbonHotKey`, `PanelController`, SwiftUI panel + manager windows, `Theme`, `LoginItem` |
+| `Tests/CliplexKitTests/` | Swift Testing suite |
+| `Resources/` | `Info.plist`, `Cliplex.entitlements` |
+| `scripts/` | Build/bundle/sign and test helpers |
+| `docs/` | Research and design references |
 
-The tray icon lives in your menu bar / system tray: left-click toggles the panel,
-right-click opens the menu.
-
-## Install
-
-### From releases
-Download the installer for your OS from the
-[Releases](https://github.com/Ron537/cliplex/releases) page
-(`.dmg` for macOS, `.msi`/`.exe` for Windows, `.AppImage`/`.deb`/`.rpm` for Linux).
-
-### Build from source
-Prerequisites: [Rust](https://www.rust-lang.org/tools/install), Node.js 20+, and
-the [Tauri system prerequisites](https://tauri.app/start/prerequisites/) for your OS.
+## Build & run
 
 ```bash
-npm install
-npm run tauri dev     # run in development
-npm run tauri build   # produce an installer for your platform
+# Build, bundle, and sign Cliplex.app (creates a self-signed dev cert on first run)
+./scripts/build-app.sh
+open build/Cliplex.app
+
+# Run the tests
+./scripts/test.sh
 ```
 
-### First-run permissions (macOS)
-To paste into other apps, Cliplex synthesizes the paste shortcut, which requires
-**Accessibility** permission (System Settings → Privacy & Security → Accessibility).
+The keyboard shortcut to open the panel is **⌘⇧V**. Auto-paste needs
+**Accessibility** permission (System Settings → Privacy & Security →
+Accessibility); the app signs with a stable self-signed certificate so the grant
+persists across rebuilds.
 
-1. The first time you trigger a paste, Cliplex asks for Accessibility permission
-   (once — it won't nag you on every paste).
-2. Enable **Cliplex** in the Accessibility list.
-3. **Quit and reopen Cliplex** so it picks up the new permission.
+### Toolchain notes (Command Line Tools, no full Xcode)
 
-Until permission is granted, selecting an item still **copies it to the
-clipboard**, so you can always paste manually with <kbd>⌘V</kbd>. The panel shows a
-small banner with a **Grant…** button while permission is missing.
+The scripts inject what the Command Line Tools toolchain needs; if you invoke
+`swift` directly you may need them too:
 
-> **Permission keeps getting asked after every rebuild?** Plain (ad-hoc) builds
-> get a new code identity each time you rebuild, so macOS forgets the grant. For
-> a permission that *persists across rebuilds*, build the app **signed with a
-> stable self-signed certificate**:
->
-> ```bash
-> npm run build:mac-signed     # tauri build + sign with a stable self-signed cert
-> ```
->
-> The first run creates a `Cliplex Dev (self-signed)` certificate in your login
-> keychain; subsequent builds reuse it, so the code identity (Designated
-> Requirement) stays stable and the Accessibility grant sticks. If you previously
-> granted an ad-hoc build, clear the stale entry once:
->
-> ```bash
-> tccutil reset Accessibility com.rborysowski.cliplex
-> ```
->
-> then grant Accessibility to the signed app and relaunch. (Plain `npm run tauri
-> build` still works but is ad-hoc signed, so the grant is lost on each rebuild.)
+- A `safe.bareRepository=all` git override (the machine's global config may set
+  it to `explicit`, which blocks SwiftPM's bare dependency repos).
+- Framework/library search paths for the Swift Testing runtime — see
+  `scripts/test.sh`.
 
-On Linux/Wayland, input injection may require a compositor helper.
-
-## Architecture
-
-```
-cliplex/
-├── crates/
-│   ├── cliplex-core/      # OS-agnostic: SQLite+FTS5 storage, search, models, pruning
-│   └── cliplex-platform/  # OS-specific: clipboard monitor, concealed-type detection, paste injection
-├── src-tauri/             # Tauri 2 shell: commands, tray, global hotkey, panel + manager windows
-└── frontend/              # SolidJS + TypeScript UI (built to ../dist)
-```
-
-**How it works:** a background monitor watches the clipboard (native
-`NSPasteboard` change-count on macOS; portable fallback elsewhere), filters out
-concealed/excluded clips, and stores them in a local SQLite database with FTS5
-full-text indexes. The SolidJS panel queries that database for instant search and
-pastes the selection by writing it back to the clipboard and synthesizing the
-paste keystroke.
-
-| Layer | Choice |
-|-------|--------|
-| Shell | Tauri 2 |
-| Core / platform | Rust (Cargo workspace) |
-| Storage & search | SQLite + FTS5 (`rusqlite`) |
-| Frontend | SolidJS + TypeScript + Vite |
-| Paste injection | `enigo` |
-
-## Development
-
-```bash
-# Rust
-cargo test --workspace
-cargo clippy --workspace --all-targets -- -D warnings
-cargo fmt --all
-
-# Frontend
-npx tsc --noEmit
-npm run build
-```
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md).
+With full Xcode installed, `swift build` / `swift test` work without extra flags.
 
 ## Privacy
 
-Cliplex makes **no network requests** and collects **no telemetry**. History is
-stored locally and is not yet encrypted at rest (rely on OS full-disk encryption;
-optional SQLCipher is on the roadmap). Details in [PRIVACY.md](./PRIVACY.md).
-
-## Roadmap
-
-- Optional encryption at rest (SQLCipher)
-- Native Windows/Linux clipboard backends (sequence-number change detection,
-  concealed-format and active-window detection)
-- List virtualization for very large histories
-- Image thumbnails and color swatches in the panel
+See [PRIVACY.md](PRIVACY.md). In short: everything is stored locally in
+`~/Library/Application Support/com.rborysowski.cliplex/cliplex.db`, there is no
+network access, and password-manager / concealed clips are ignored.
 
 ## License
 
-MIT — see [LICENSE](./LICENSE).
+[MIT](LICENSE).

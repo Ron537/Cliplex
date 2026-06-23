@@ -4,48 +4,38 @@ Thanks for your interest in improving Cliplex!
 
 ## Getting started
 
-Install [Rust](https://www.rust-lang.org/tools/install), Node.js 20+, and the
-[Tauri prerequisites](https://tauri.app/start/prerequisites/) for your OS, then:
+Cliplex is a native macOS app built with Swift Package Manager (macOS 14+). You
+need the Swift toolchain — either full Xcode, or the Command Line Tools
+(`xcode-select --install`).
 
 ```bash
-npm install
-npm run tauri dev
+./scripts/build-app.sh   # build + bundle + sign, then `open build/Cliplex.app`
+./scripts/test.sh        # run the test suite
 ```
 
 ## Project layout
 
-- `crates/cliplex-core` — OS-agnostic storage, search, models. Add logic here when
-  it doesn't need OS APIs; it's the easiest layer to unit-test.
-- `crates/cliplex-platform` — OS-specific clipboard access behind the
-  `ClipboardBackend` trait. New OS backends go here.
-- `src-tauri` — the Tauri app: commands, monitor, tray, windows.
-- `frontend` — SolidJS UI (`App.tsx` is the panel, `Manager.tsx` is the
-  snippets/settings window).
+- `Sources/CliplexKit` — testable, UI-independent core: storage (GRDB / SQLite +
+  FTS5), models, search, clipboard capture, the monitor, capture/privacy filter,
+  settings, accessibility, paste injection, and the panel layout logic. Put
+  logic here when it doesn't need the view layer — it's the easiest part to unit
+  test.
+- `Sources/Cliplex` — the menu-bar agent: status item, global hotkey, the
+  non-activating panel, the SwiftUI panel/manager views, theming, and the login
+  item.
+- `Tests/CliplexKitTests` — Swift Testing tests for the core.
 
 ## Checks (must pass before a PR)
 
 ```bash
-cargo fmt --all
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
-npx tsc --noEmit
-npm run build
+swift build      # no warnings
+./scripts/test.sh
 ```
 
-CI runs these on macOS, Windows, and Linux.
+CI runs `swift build` and `swift test` on macOS for every push and pull request.
 
-## Guidelines
+## Conventions
 
-- Keep the **privacy guarantees** intact: no telemetry, no network calls.
-- Prefer adding testable logic to `cliplex-core` over the Tauri layer.
-- Match the existing code style; keep commits focused with clear messages.
-- For new OS clipboard support, implement the `ClipboardBackend` trait and the
-  capture/inject paths rather than special-casing the app layer.
-
-## Good first issues
-
-- Native Windows / Linux clipboard backends (change detection + concealed-format
-  detection + active-window detection).
-- List virtualization for very large histories.
-- Image thumbnails / color swatches in the panel.
-- Additional localizations.
+- Keep UI-independent logic in `CliplexKit` and cover it with tests.
+- Prefer small, well-documented types; comment the *why*, not the *what*.
+- No telemetry or network calls — Cliplex is local-only by design.
