@@ -1,14 +1,13 @@
 import AppKit
-import Carbon.HIToolbox
 import CliplexKit
+import KeyboardShortcuts
 
-/// Owns the app lifecycle: services, the menu-bar item, the global hotkey, the
-/// clipboard panel, and the manager window.
+/// Owns the app lifecycle: services, the menu-bar item, the global hotkeys, the
+/// clipboard panel, and the manager windows.
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var services: AppServices!
     private var statusItem: NSStatusItem?
-    private var hotKey: CarbonHotKey?
     private var panel: PanelController!
     private var managerViewModel: ManagerViewModel?
     private var snippetsWindow: SnippetsWindowController?
@@ -25,10 +24,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         applyAppearance()
         installMainMenu()
         let viewModel = PanelViewModel(services: services)
+        viewModel.requestSettings = { [weak self] in self?.openSettings() }
         panel = PanelController(viewModel: viewModel)
 
         installStatusItem()
-        installHotKey()
+        installShortcuts()
         services.startMonitoring()
 
         NotificationCenter.default.addObserver(
@@ -71,7 +71,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let menu = NSMenu()
-        addItem(menu, "Open Cliplex", #selector(togglePanel))
+        addItem(menu, "Open Cliplex", #selector(openClipboardPanel))
+        addItem(menu, "Open Snippets", #selector(openSnippetsPanel))
         menu.addItem(.separator())
         addItem(menu, "Snippets…", #selector(openSnippets))
         addItem(menu, "Settings…", #selector(openSettings), key: ",")
@@ -87,15 +88,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(item)
     }
 
-    private func installHotKey() {
-        // Default: ⌘⇧V, matching the previous build.
-        hotKey = CarbonHotKey(keyCode: UInt32(kVK_ANSI_V), modifiers: [.command, .shift]) { [weak self] in
-            MainActor.assumeIsolated { self?.togglePanel() }
+    private func installShortcuts() {
+        KeyboardShortcuts.onKeyUp(for: .openCliplex) { [weak self] in
+            MainActor.assumeIsolated { self?.panel.toggleAtCursor(mode: .clipboard) }
+        }
+        KeyboardShortcuts.onKeyUp(for: .openSnippets) { [weak self] in
+            MainActor.assumeIsolated { self?.panel.toggleAtCursor(mode: .snippets) }
         }
     }
 
-    @objc private func togglePanel() {
-        panel.toggleAtCursor()
+    @objc private func openClipboardPanel() {
+        panel.toggleAtCursor(mode: .clipboard)
+    }
+
+    @objc private func openSnippetsPanel() {
+        panel.toggleAtCursor(mode: .snippets)
     }
 
     @objc private func openSnippets() {

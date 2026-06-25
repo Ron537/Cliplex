@@ -1,5 +1,6 @@
 import AppKit
 import CliplexKit
+import UniformTypeIdentifiers
 
 /// State + actions for the manager window (snippets CRUD and settings).
 @MainActor
@@ -19,11 +20,14 @@ final class ManagerViewModel: ObservableObject {
 
     // Dialogs
     @Published var isNamingFolder = false
+    @Published var isRenamingFolder = false
+    @Published var renameFolderName = ""
     @Published var confirmingFolderDelete = false
     @Published var confirmingSnippetDelete = false
     @Published private(set) var folderPendingDelete: SnippetFolder?
     @Published private(set) var folderPendingDeleteCount = 0
     @Published private(set) var snippetPendingDelete: Snippet?
+    private var folderBeingRenamed: SnippetFolder?
 
     /// The persisted snapshot of the snippet currently open (used to detect
     /// unsaved edits). Nil while composing a draft.
@@ -132,6 +136,82 @@ final class ManagerViewModel: ObservableObject {
         isNamingFolder = false
         loadFolders()
         selectFolder(folder.id)
+    }
+
+    /// Opens the rename dialog for a folder, pre-filled with its current name.
+    func requestRenameFolder(_ folder: SnippetFolder) {
+        folderBeingRenamed = folder
+        renameFolderName = folder.name
+        isRenamingFolder = true
+    }
+
+    func cancelRenameFolder() {
+        renameFolderName = ""
+        isRenamingFolder = false
+    }
+
+    func confirmRenameFolder() {
+        defer { isRenamingFolder = false }
+        let name = renameFolderName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, let folder = folderBeingRenamed else { return }
+        try? services.store.renameFolder(id: folder.id, name: name)
+        folderBeingRenamed = nil
+        loadFolders()
+    }
+
+    // MARK: - Import / Export
+
+    /// Exports all folders and snippets to a JSON file chosen by the user.
+    func exportSnippets() {
+        let data: Data
+        do {
+            data = try SnippetIO.export(from: services.store)
+        } catch {
+            presentError("Could not export snippets", error)
+            return
+        }
+        let panel = NSSavePanel()
+        panel.title = "Export Snippets"
+        panel.nameFieldStringValue = "cliplex-snippets.json"
+        panel.allowedContentTypes = [.json]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            try data.write(to: url)
+        } catch {
+            presentError("Could not save the export file", error)
+        }
+    }
+
+    /// Imports folders and snippets from a JSON file, merging into the library.
+    func importSnippets() {
+        let panel = NSOpenPanel()
+        panel.title = "Import Snippets"
+        panel.allowedContentTypes = [.json]
+        panel.allowsMultipleSelection = false
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        let data: Data
+        do {
+            data = try Data(contentsOf: url)
+        } catch {
+            presentError("Could not read the file", error)
+            return
+        }
+        do {
+            try SnippetIO.importing(data, into: services.store)
+        } catch {
+            presentError("Could not import snippets", error)
+            return
+        }
+        loadFolders()
+        loadSnippets()
+    }
+
+    private func presentError(_ title: String, _ error: Error) {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = error.localizedDescription
+        alert.alertStyle = .warning
+        alert.runModal()
     }
 
     /// Asks for confirmation before deleting a folder (the hovered one).

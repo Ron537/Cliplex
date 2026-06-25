@@ -79,7 +79,7 @@ struct PanelView: View {
 
     private var list: some View {
         Group {
-            if viewModel.layout.flatRows.isEmpty && !(viewModel.mode == .snippets && viewModel.hasFolders) {
+            if viewModel.layout.entries.isEmpty {
                 emptyState
             } else {
                 ScrollViewReader { proxy in
@@ -87,6 +87,7 @@ struct PanelView: View {
                         LazyVStack(alignment: .leading, spacing: 0) {
                             ForEach(viewModel.layout.entries) { entry in
                                 entryView(entry)
+                                    .transition(.opacity)
                             }
                         }
                         .padding(.vertical, 4)
@@ -116,14 +117,19 @@ struct PanelView: View {
     private func entryView(_ entry: PanelEntry) -> some View {
         switch entry {
         case let .header(_, title, folderKey, collapsed):
-            HeaderView(title: title, folderKey: folderKey, collapsed: collapsed) { key in
+            HeaderView(
+                title: title,
+                folderKey: folderKey,
+                collapsed: collapsed,
+                selected: folderKey.map { viewModel.isHeaderSelected($0) } ?? false
+            ) { key in
                 viewModel.toggleFolder(key)
             }
         case let .row(row, flatIndex, quickIndex):
             RowView(
                 row: row,
                 quickIndex: quickIndex,
-                selected: viewModel.selection == flatIndex,
+                selected: viewModel.isRowSelected(flatIndex),
                 indented: viewModel.mode == .snippets && viewModel.query.isEmpty
             )
             .onContinuousHover(coordinateSpace: .global) { phase in
@@ -131,7 +137,7 @@ struct PanelView: View {
                     viewModel.hoverMoved(to: location, index: flatIndex)
                 }
             }
-            .onTapGesture { viewModel.select(flatIndex); viewModel.activateSelection() }
+            .onTapGesture { viewModel.selectRow(flatIndex); viewModel.activateSelection() }
         }
     }
 
@@ -160,6 +166,7 @@ struct PanelView: View {
 
     private var footer: some View {
         HStack(spacing: 10) {
+            SettingsButton { viewModel.openSettings() }
             Text(viewModel.statusText)
                 .font(.system(size: 10, design: .monospaced))
                 .foregroundStyle(Theme.mutedText)
@@ -206,5 +213,24 @@ private struct HintKey: View {
             .padding(.horizontal, 4)
             .padding(.vertical, 1)
             .background(Theme.fieldBackground, in: RoundedRectangle(cornerRadius: 3))
+    }
+}
+
+/// A subtle gear button in the footer that opens Settings.
+private struct SettingsButton: View {
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "gearshape")
+                .font(.system(size: 11.5, weight: .medium))
+                .foregroundStyle(hovering ? Theme.secondaryText : Theme.mutedText)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .help("Settings")
+        .animation(.easeOut(duration: 0.12), value: hovering)
     }
 }

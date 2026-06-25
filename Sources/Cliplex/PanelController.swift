@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import CliplexKit
 
 /// A borderless panel that can still become key (borderless `NSWindow`s return
 /// `false` from `canBecomeKey` by default, which would block typing in the
@@ -30,12 +31,18 @@ final class PanelController: NSObject, NSWindowDelegate {
         viewModel.requestHide = { [weak self] in self?.hide() }
     }
 
-    func toggleAtCursor() {
+    func toggleAtCursor(mode: PanelMode) {
         let panel = panel ?? makePanel()
         if panel.isVisible {
-            hide()
+            // Same mode toggles closed; a different mode switches in place.
+            if viewModel.mode == mode {
+                hide()
+            } else {
+                viewModel.switchMode(to: mode)
+                DispatchQueue.main.async { [weak self] in self?.viewModel.focusSearch() }
+            }
         } else {
-            viewModel.onShow()
+            viewModel.onShow(mode: mode)
             positionAtCursor(panel)
             panel.makeKeyAndOrderFront(nil)
             installKeyMonitor()

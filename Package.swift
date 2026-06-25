@@ -7,7 +7,8 @@ let package = Package(
         .macOS(.v14)
     ],
     dependencies: [
-        .package(url: "https://github.com/groue/GRDB.swift", from: "6.29.0")
+        .package(url: "https://github.com/groue/GRDB.swift", from: "6.29.0"),
+        .package(url: "https://github.com/sindresorhus/KeyboardShortcuts", "1.12.0"..<"1.16.0")
     ],
     targets: [
         // Testable, UI-independent core: storage, models, clipboard capture,
@@ -22,7 +23,10 @@ let package = Package(
         // The menu-bar agent app (AppKit shell + SwiftUI content).
         .executableTarget(
             name: "Cliplex",
-            dependencies: ["CliplexKit"],
+            dependencies: [
+                "CliplexKit",
+                .product(name: "KeyboardShortcuts", package: "KeyboardShortcuts")
+            ],
             path: "Sources/Cliplex"
         ),
         .testTarget(

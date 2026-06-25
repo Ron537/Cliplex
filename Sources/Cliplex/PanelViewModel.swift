@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 import Combine
 import Carbon.HIToolbox
 import CliplexKit
@@ -21,6 +22,8 @@ final class PanelViewModel: ObservableObject {
 
     /// Set by the panel controller to dismiss the window.
     var requestHide: () -> Void = {}
+    /// Set by the app delegate to open the Settings window.
+    var requestSettings: () -> Void = {}
 
     private let services: AppServices
     private var collapsed: Set<Int64> = []
@@ -49,11 +52,13 @@ final class PanelViewModel: ObservableObject {
     // MARK: - Lifecycle
 
     /// Called each time the panel is shown: resets state and reloads data.
-    func onShow() {
+    func onShow(mode: PanelMode) {
+        self.mode = mode
         query = ""
         selection = 0
         needsAccessibility = !Accessibility.isTrusted
         reload()
+        selectFirstRow()
         scrollToken += 1
     }
 
@@ -87,21 +92,49 @@ final class PanelViewModel: ObservableObject {
             folders: folders,
             collapsed: collapsed
         )
-        if selection >= layout.flatRows.count {
-            selection = max(0, layout.flatRows.count - 1)
+        if selection >= layout.nav.count {
+            selection = max(0, layout.nav.count - 1)
         }
     }
 
     // MARK: - Derived
 
+    /// Number of pasteable rows (clips/snippets), used for the status label.
     var rowCount: Int { layout.flatRows.count }
-    var hasFolders: Bool { !folders.isEmpty }
+    /// Number of keyboard-navigable items (rows plus tree headers).
+    var navCount: Int { layout.nav.count }
 
-    /// Stable scroll identity of the selected row (used by `ScrollViewReader`),
-    /// matching the row's `ForEach` identity.
+    private var isSearching: Bool {
+        !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var navSelection: NavItem? {
+        guard selection >= 0, selection < layout.nav.count else { return nil }
+        return layout.nav[selection]
+    }
+
+    /// Stable scroll identity of the selected item (used by `ScrollViewReader`),
+    /// matching the entry's `ForEach` identity (a row's `listID` or a header id).
     var selectedScrollID: String? {
-        guard selection >= 0, selection < layout.flatRows.count else { return nil }
-        return layout.flatRows[selection].listID
+        switch navSelection {
+        case let .row(i):
+            guard i >= 0, i < layout.flatRows.count else { return nil }
+            return layout.flatRows[i].listID
+        case let .header(key):
+            return "h:\(key)"
+        case nil:
+            return nil
+        }
+    }
+
+    func isRowSelected(_ flatIndex: Int) -> Bool {
+        if case let .row(i) = navSelection { return i == flatIndex }
+        return false
+    }
+
+    func isHeaderSelected(_ folderKey: Int64) -> Bool {
+        if case let .header(key) = navSelection { return key == folderKey }
+        return false
     }
 
     var statusText: String {
@@ -115,6 +148,8 @@ final class PanelViewModel: ObservableObject {
         mode = newMode
         selection = 0
         reload()
+        selectFirstRow()
+        scrollToken += 1
     }
 
     func cycleMode(forward: Bool) {
@@ -122,28 +157,36 @@ final class PanelViewModel: ObservableObject {
     }
 
     func move(_ delta: Int) {
-        guard rowCount > 0 else { return }
-        selection = min(rowCount - 1, max(0, selection + delta))
+        guard navCount > 0 else { return }
+        selection = min(navCount - 1, max(0, selection + delta))
         scrollToken += 1
     }
 
-    /// Selects a row without auto-scrolling (used for click).
-    func select(_ index: Int) {
-        selection = index
+    /// Selects a row (by its `flatRows` index) without auto-scrolling. Used for
+    /// clicks/hover, which target rows rather than tree headers.
+    func selectRow(_ flatIndex: Int) {
+        if let n = layout.nav.firstIndex(of: .row(flatIndex)) { selection = n }
     }
 
     /// Hover selection that only takes effect on real pointer movement. The
     /// pointer location is compared against the last hover location so that
     /// rows scrolling *under a stationary cursor* (e.g. during keyboard nav)
     /// don't hijack the selection.
-    func hoverMoved(to location: CGPoint, index: Int) {
+    func hoverMoved(to location: CGPoint, index flatIndex: Int) {
         guard location != lastHoverLocation else { return }
         lastHoverLocation = location
-        selection = index
+        selectRow(flatIndex)
     }
 
     func activateSelection() {
-        paste(rowAt: selection)
+        switch navSelection {
+        case let .row(i):
+            paste(rowAt: i)
+        case let .header(key):
+            toggleFolder(key)
+        case nil:
+            break
+        }
     }
 
     func quickPaste(_ index: Int) {
@@ -177,8 +220,83 @@ final class PanelViewModel: ObservableObject {
     }
 
     func toggleFolder(_ key: Int64) {
-        if collapsed.contains(key) { collapsed.remove(key) } else { collapsed.insert(key) }
-        rebuild()
+        setCollapsed(key, !collapsed.contains(key))
+    }
+
+    /// Opens the Settings window, dismissing the panel first.
+    func openSettings() {
+        requestHide()
+        requestSettings()
+    }
+
+    // MARK: - Tree navigation (snippets)
+
+    /// Left arrow: collapse the selected folder, or jump from a snippet to its
+    /// parent folder header. Returns `true` when handled (so the key is consumed
+    /// instead of moving the search-field cursor).
+    func collapseOrParent() -> Bool {
+        guard mode == .snippets, !isSearching else { return false }
+        switch navSelection {
+        case let .header(key):
+            if !collapsed.contains(key) { setCollapsed(key, true) }
+        case let .row(i):
+            let key = layout.flatRows[i].folderID ?? uncategorizedFolderKey
+            selectHeader(key)
+        case nil:
+            break
+        }
+        return true
+    }
+
+    /// Right arrow: expand a collapsed folder ("if collapsed and I get to it,
+    /// expand it"), or step into an expanded folder's first row.
+    func expandOrChild() -> Bool {
+        guard mode == .snippets, !isSearching else { return false }
+        switch navSelection {
+        case let .header(key):
+            if collapsed.contains(key) { setCollapsed(key, false) }
+            else { moveToFirstChild(key) }
+        case .row, nil:
+            break
+        }
+        return true
+    }
+
+    private func setCollapsed(_ key: Int64, _ value: Bool) {
+        if value { collapsed.insert(key) } else { collapsed.remove(key) }
+        withAnimation(.easeOut(duration: 0.18)) {
+            rebuild()
+            // Keep the toggled folder selected as its rows appear/disappear.
+            if let n = layout.nav.firstIndex(of: .header(folderKey: key)) { selection = n }
+        }
+        scrollToken += 1
+    }
+
+    /// Selects the first pasteable row, skipping any leading folder headers, so
+    /// opening a tab lands on a snippet/clip ready to paste rather than a header.
+    private func selectFirstRow() {
+        if let n = layout.nav.firstIndex(where: { if case .row = $0 { return true }; return false }) {
+            selection = n
+        } else {
+            selection = 0
+        }
+    }
+
+    private func selectHeader(_ key: Int64) {
+        if let n = layout.nav.firstIndex(of: .header(folderKey: key)) {
+            selection = n
+            scrollToken += 1
+        }
+    }
+
+    private func moveToFirstChild(_ key: Int64) {
+        guard let header = layout.nav.firstIndex(of: .header(folderKey: key)) else { return }
+        let next = header + 1
+        guard next < layout.nav.count, case let .row(i) = layout.nav[next] else { return }
+        let folderKey = layout.flatRows[i].folderID ?? uncategorizedFolderKey
+        guard folderKey == key else { return }
+        selection = next
+        scrollToken += 1
     }
 
     func requestAccessibility() {
@@ -186,8 +304,8 @@ final class PanelViewModel: ObservableObject {
     }
 
     private var selectedRow: DisplayRow? {
-        guard selection >= 0, selection < layout.flatRows.count else { return nil }
-        return layout.flatRows[selection]
+        guard case let .row(i) = navSelection, i >= 0, i < layout.flatRows.count else { return nil }
+        return layout.flatRows[i]
     }
 
     private func showToast(_ message: String) {
@@ -218,6 +336,10 @@ final class PanelViewModel: ObservableObject {
             move(1); return true
         case kVK_UpArrow:
             move(-1); return true
+        case kVK_LeftArrow:
+            return collapseOrParent()
+        case kVK_RightArrow:
+            return expandOrChild()
         case kVK_Return, kVK_ANSI_KeypadEnter:
             activateSelection(); return true
         case kVK_Escape:

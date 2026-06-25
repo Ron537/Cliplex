@@ -70,6 +70,14 @@ public enum PanelEntry: Identifiable {
     }
 }
 
+/// A keyboard-navigable item. In snippets tree mode this interleaves collapsible
+/// folder headers with their rows; in every other mode it is one entry per row,
+/// so a selection index maps 1:1 onto `flatRows`.
+public enum NavItem: Equatable {
+    case header(folderKey: Int64)
+    case row(Int)
+}
+
 /// Synthetic folder key for uncategorized snippets.
 public let uncategorizedFolderKey: Int64 = -1
 
@@ -77,10 +85,13 @@ public let uncategorizedFolderKey: Int64 = -1
 public struct PanelLayout {
     public var entries: [PanelEntry] = []
     public var flatRows: [DisplayRow] = []
+    /// Ordered keyboard-navigable items (see `NavItem`).
+    public var nav: [NavItem] = []
 
-    public init(entries: [PanelEntry] = [], flatRows: [DisplayRow] = []) {
+    public init(entries: [PanelEntry] = [], flatRows: [DisplayRow] = [], nav: [NavItem] = []) {
         self.entries = entries
         self.flatRows = flatRows
+        self.nav = nav
     }
 }
 
@@ -165,6 +176,10 @@ public func buildPanelLayout(
                         folderKey: group.folderKey,
                         collapsed: isCollapsed)
             )
+            // Only collapsible folder headers (which carry a key) are navigable.
+            if let key = group.folderKey {
+                layout.nav.append(.header(folderKey: key))
+            }
         }
         if isCollapsed { continue }
         for row in group.rows {
@@ -172,6 +187,7 @@ public func buildPanelLayout(
             let quickIndex = flatIndex < 10 ? flatIndex : nil
             layout.entries.append(.row(row, flatIndex: flatIndex, quickIndex: quickIndex))
             layout.flatRows.append(row)
+            layout.nav.append(.row(flatIndex))
         }
     }
     return layout

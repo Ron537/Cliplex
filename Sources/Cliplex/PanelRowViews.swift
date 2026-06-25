@@ -98,6 +98,7 @@ struct HeaderView: View {
     let title: String
     let folderKey: Int64?
     let collapsed: Bool
+    var selected: Bool = false
     let onToggle: (Int64) -> Void
 
     var body: some View {
@@ -110,6 +111,7 @@ struct HeaderView: View {
                         .font(.system(size: 9, weight: .semibold))
                         .foregroundStyle(Theme.accent)
                         .rotationEffect(.degrees(collapsed ? -90 : 0))
+                        .animation(.easeOut(duration: 0.18), value: collapsed)
                     Text(title)
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(Theme.secondaryText)
@@ -117,6 +119,11 @@ struct HeaderView: View {
                 }
                 .padding(.horizontal, 13)
                 .frame(height: 26)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(selected ? Theme.selectionBackground : .clear)
+                        .padding(.horizontal, 4)
+                )
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)

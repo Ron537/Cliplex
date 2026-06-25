@@ -1,5 +1,6 @@
 import SwiftUI
 import CliplexKit
+import KeyboardShortcuts
 
 // MARK: - Snippets window
 
@@ -47,6 +48,7 @@ struct SnippetsView: View {
         .overlay {
             dialogOverlay
                 .animation(.easeOut(duration: 0.16), value: viewModel.isNamingFolder)
+                .animation(.easeOut(duration: 0.16), value: viewModel.isRenamingFolder)
                 .animation(.easeOut(duration: 0.16), value: viewModel.confirmingFolderDelete)
                 .animation(.easeOut(duration: 0.16), value: viewModel.confirmingSnippetDelete)
         }
@@ -80,6 +82,18 @@ struct SnippetsView: View {
                     confirmTitle: "Create",
                     onCancel: viewModel.cancelNewFolder,
                     onConfirm: viewModel.createFolder
+                )
+            }
+        } else if viewModel.isRenamingFolder {
+            DialogScrim(onDismiss: viewModel.cancelRenameFolder) {
+                InputDialog(
+                    icon: "pencil",
+                    title: "Rename Folder",
+                    placeholder: "Folder name",
+                    text: $viewModel.renameFolderName,
+                    confirmTitle: "Rename",
+                    onCancel: viewModel.cancelRenameFolder,
+                    onConfirm: viewModel.confirmRenameFolder
                 )
             }
         } else if viewModel.confirmingFolderDelete {
@@ -128,9 +142,32 @@ struct SnippetsView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+
+            HStack(spacing: 6) {
+                sidebarActionButton("Import", "square.and.arrow.down") { viewModel.importSnippets() }
+                sidebarActionButton("Export", "square.and.arrow.up") { viewModel.exportSnippets() }
+            }
+            .padding(.top, 2)
         }
         .padding(10)
         .frame(maxHeight: .infinity, alignment: .top)
+    }
+
+    private func sidebarActionButton(_ title: String, _ glyph: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: glyph).font(.system(size: 11))
+                Text(title).font(.system(size: 12))
+            }
+            .foregroundStyle(Theme.secondaryText)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 7)
+            .background(Theme.fieldBackground, in: RoundedRectangle(cornerRadius: 7))
+            .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Theme.hairline, lineWidth: 1))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help("\(title) all snippets")
     }
 
     private func folderButton(name: String, glyph: String, folder: SnippetFolder?) -> some View {
@@ -142,7 +179,14 @@ struct SnippetsView: View {
                 .lineLimit(1)
             Spacer()
             if let folder {
-                HoverTrashButton(visible: hoveredFolder == folder.id) { viewModel.requestDeleteFolder(folder) }
+                HStack(spacing: 6) {
+                    HoverIconButton(systemName: "pencil", help: "Rename", visible: hoveredFolder == folder.id) {
+                        viewModel.requestRenameFolder(folder)
+                    }
+                    HoverIconButton(systemName: "trash", help: "Delete", visible: hoveredFolder == folder.id) {
+                        viewModel.requestDeleteFolder(folder)
+                    }
+                }
             }
         }
         .padding(.horizontal, 9).padding(.vertical, 7)
@@ -226,7 +270,9 @@ struct SnippetsView: View {
                     .font(.system(size: 11)).foregroundStyle(Theme.mutedText).lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            HoverTrashButton(visible: hoveredSnippet == snippet.id) { viewModel.requestDeleteSnippet(snippet) }
+            HoverIconButton(systemName: "trash", help: "Delete", visible: hoveredSnippet == snippet.id) {
+                viewModel.requestDeleteSnippet(snippet)
+            }
         }
         .padding(.horizontal, 10).padding(.vertical, 8)
         .background(isActive ? Theme.accent.opacity(0.14) : .clear, in: RoundedRectangle(cornerRadius: 7))
@@ -331,6 +377,16 @@ struct SettingsView: View {
             Section("Behavior") {
                 Toggle("Paste automatically on select", isOn: $viewModel.settings.pasteOnSelect)
                 Toggle("Launch Cliplex at login", isOn: $viewModel.autostartEnabled)
+            }
+
+            Section {
+                KeyboardShortcuts.Recorder("Open Cliplex", name: .openCliplex)
+                KeyboardShortcuts.Recorder("Open Snippets", name: .openSnippets)
+            } header: {
+                Text("Shortcuts")
+            } footer: {
+                Text("“Open Cliplex” shows the clipboard history; “Open Snippets” opens straight to the snippets tab.")
+                    .foregroundStyle(.secondary)
             }
 
             Section("Appearance") {

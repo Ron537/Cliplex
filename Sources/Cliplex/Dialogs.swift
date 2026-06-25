@@ -68,8 +68,9 @@ struct ConfirmDialog: View {
     }
 }
 
-/// A single-text-field dialog (e.g. New Folder).
+/// A single-text-field dialog (e.g. New Folder / Rename Folder).
 struct InputDialog: View {
+    var icon: String = "folder.badge.plus"
     let title: String
     let placeholder: String
     @Binding var text: String
@@ -85,7 +86,7 @@ struct InputDialog: View {
         VStack(spacing: 12) {
             ZStack {
                 Circle().fill(Theme.accent.opacity(0.14)).frame(width: 38, height: 38)
-                Image(systemName: "folder.badge.plus")
+                Image(systemName: icon)
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Theme.accent)
             }
@@ -170,16 +171,18 @@ struct DialogButton: View {
     }
 }
 
-/// A trash affordance revealed on row hover. Neutral by default — brightens
+/// A small icon button revealed on row hover. Neutral by default — brightens
 /// (not red) under the pointer — so the list doesn't read as alarming.
-struct HoverTrashButton: View {
+struct HoverIconButton: View {
+    let systemName: String
+    var help: String = ""
     let visible: Bool
     let action: () -> Void
     @State private var hovering = false
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: "trash")
+            Image(systemName: systemName)
                 .font(.system(size: 11))
                 .foregroundStyle(hovering ? Theme.primaryText : Theme.mutedText)
         }
@@ -187,7 +190,7 @@ struct HoverTrashButton: View {
         .opacity(visible ? 1 : 0)
         .allowsHitTesting(visible)
         .onHover { hovering = $0 }
-        .help("Delete")
+        .help(help)
     }
 }
 

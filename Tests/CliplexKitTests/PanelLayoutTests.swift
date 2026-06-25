@@ -128,4 +128,49 @@ import Testing
         #expect(headers == ["Empty"])
         #expect(layout.flatRows.isEmpty)
     }
+
+    // MARK: - Keyboard-navigable items
+
+    @Test func snippetTreeNavInterleavesHeadersAndRows() {
+        let folders = [
+            SnippetFolder(id: 1, name: "Work", sortOrder: 0, createdAt: 0),
+            SnippetFolder(id: 2, name: "Personal", sortOrder: 1, createdAt: 0),
+        ]
+        let snippets = [
+            snippetRow(id: 10, folder: 1),
+            snippetRow(id: 11, folder: 1),
+            snippetRow(id: 12, folder: 2),
+        ]
+        let layout = buildPanelLayout(
+            mode: .snippets, query: "", clips: [], snippets: snippets, folders: folders, collapsed: [])
+        // Folder headers are navigable and interleaved with their rows.
+        #expect(layout.nav == [
+            .header(folderKey: 1), .row(0), .row(1),
+            .header(folderKey: 2), .row(2),
+        ])
+    }
+
+    @Test func collapsedFolderHeaderStaysNavigableWithoutItsRows() {
+        let folders = [
+            SnippetFolder(id: 1, name: "Work", sortOrder: 0, createdAt: 0),
+            SnippetFolder(id: 2, name: "Personal", sortOrder: 1, createdAt: 0),
+        ]
+        let snippets = [snippetRow(id: 10, folder: 1), snippetRow(id: 11, folder: 2)]
+        let layout = buildPanelLayout(
+            mode: .snippets, query: "", clips: [], snippets: snippets, folders: folders, collapsed: [1])
+        // Collapsed folder keeps a navigable header (so it can be re-expanded).
+        #expect(layout.nav == [
+            .header(folderKey: 1),
+            .header(folderKey: 2), .row(0),
+        ])
+    }
+
+    @Test func clipboardNavIsRowsOnly() {
+        let now = nowMillis()
+        let rows = [clipRow(id: 1, at: now, pinned: true), clipRow(id: 2, at: now)]
+        let layout = buildPanelLayout(
+            mode: .clipboard, query: "", clips: rows, snippets: [], folders: [], collapsed: [])
+        // Time/Pinned headers are not navigable: selection maps 1:1 onto rows.
+        #expect(layout.nav == [.row(0), .row(1)])
+    }
 }
