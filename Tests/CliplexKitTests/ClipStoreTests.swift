@@ -160,6 +160,27 @@ import Testing
         #expect(try store.listSnippets(folderID: folder.id).count == 1)
     }
 
+    @Test func reorderFoldersPersistsOrder() throws {
+        let store = try makeStore()
+        let a = try store.addFolder(name: "A")
+        let b = try store.addFolder(name: "B")
+        let c = try store.addFolder(name: "C")
+        #expect(try store.listFolders().map(\.id) == [a.id, b.id, c.id])
+        try store.setFolderOrder([c.id, a.id, b.id])
+        #expect(try store.listFolders().map(\.id) == [c.id, a.id, b.id])
+    }
+
+    @Test func reorderSnippetsPersistsOrder() throws {
+        let store = try makeStore()
+        let folder = try store.addFolder(name: "F")
+        let s1 = try store.addSnippet(folderID: folder.id, title: "1", content: "")
+        let s2 = try store.addSnippet(folderID: folder.id, title: "2", content: "")
+        let s3 = try store.addSnippet(folderID: folder.id, title: "3", content: "")
+        #expect(try store.listSnippets(folderID: folder.id).map(\.id) == [s1.id, s2.id, s3.id])
+        try store.setSnippetOrder([s3.id, s1.id, s2.id])
+        #expect(try store.listSnippets(folderID: folder.id).map(\.id) == [s3.id, s1.id, s2.id])
+    }
+
     @Test func reopenPreservesDataAndDedups() throws {
         let path = NSTemporaryDirectory() + "cliplex-test-\(UUID().uuidString).db"
         defer {

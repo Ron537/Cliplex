@@ -60,7 +60,19 @@ final class AppServices {
         if trimmed.isEmpty {
             return (try? store.listSnippets(folderID: nil)) ?? []
         }
-        return (try? store.searchSnippets(trimmed, limit: 200)) ?? []
+
+        // Match snippet title/content (FTS)…
+        let byContent = (try? store.searchSnippets(trimmed, limit: 200)) ?? []
+        // …and also snippets whose *folder name* matches the query.
+        let folders = (try? store.listFolders()) ?? []
+        let matchingFolderIDs = folders.filter {
+            $0.name.range(of: trimmed, options: .caseInsensitive) != nil
+        }.map(\.id)
+        let byFolder = matchingFolderIDs.flatMap { (try? store.listSnippets(folderID: $0)) ?? [] }
+
+        // Merge, de-duplicated by id (content matches first).
+        var seen = Set<Int64>()
+        return (byContent + byFolder).filter { seen.insert($0.id).inserted }
     }
 
     // MARK: - Clip actions

@@ -10,7 +10,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private var hotKey: CarbonHotKey?
     private var panel: PanelController!
-    private var manager: ManagerWindowController?
+    private var managerViewModel: ManagerViewModel?
+    private var snippetsWindow: SnippetsWindowController?
+    private var settingsWindow: SettingsWindowController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         do {
@@ -21,6 +23,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         applyAppearance()
+        installMainMenu()
         let viewModel = PanelViewModel(services: services)
         panel = PanelController(viewModel: viewModel)
 
@@ -31,6 +34,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NotificationCenter.default.addObserver(
             self, selector: #selector(applyAppearance),
             name: .cliplexSettingsChanged, object: nil)
+    }
+
+    /// Installs a minimal main menu. As a menu-bar agent the bar isn't shown,
+    /// but the Edit menu's key equivalents are what make Cut/Copy/Paste/Undo/
+    /// Select All work inside text fields (snippet editor, search, dialogs).
+    private func installMainMenu() {
+        let mainMenu = NSMenu()
+
+        let editItem = NSMenuItem()
+        mainMenu.addItem(editItem)
+        let editMenu = NSMenu(title: "Edit")
+
+        editMenu.addItem(withTitle: "Undo", action: Selector(("undo:")), keyEquivalent: "z")
+        let redo = editMenu.addItem(withTitle: "Redo", action: Selector(("redo:")), keyEquivalent: "z")
+        redo.keyEquivalentModifierMask = [.command, .shift]
+        editMenu.addItem(.separator())
+        editMenu.addItem(withTitle: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+        editMenu.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+        editMenu.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+        editMenu.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+
+        editItem.submenu = editMenu
+        NSApp.mainMenu = mainMenu
     }
 
     // MARK: - Menu bar
@@ -46,7 +72,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let menu = NSMenu()
         addItem(menu, "Open Cliplex", #selector(togglePanel))
-        addItem(menu, "Snippets & Settings…", #selector(openManager))
+        menu.addItem(.separator())
+        addItem(menu, "Snippets…", #selector(openSnippets))
+        addItem(menu, "Settings…", #selector(openSettings), key: ",")
         menu.addItem(.separator())
         addItem(menu, "Quit Cliplex", #selector(quit), key: "q")
         item.menu = menu
@@ -70,11 +98,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.toggleAtCursor()
     }
 
-    @objc private func openManager() {
-        if manager == nil {
-            manager = ManagerWindowController(services: services)
+    @objc private func openSnippets() {
+        if snippetsWindow == nil {
+            snippetsWindow = SnippetsWindowController(viewModel: sharedManagerViewModel())
         }
-        manager?.show()
+        snippetsWindow?.show()
+    }
+
+    @objc private func openSettings() {
+        if settingsWindow == nil {
+            settingsWindow = SettingsWindowController(viewModel: sharedManagerViewModel())
+        }
+        settingsWindow?.show()
+    }
+
+    /// The Snippets and Settings windows share one view model so state stays
+    /// coherent between them.
+    private func sharedManagerViewModel() -> ManagerViewModel {
+        if let viewModel = managerViewModel { return viewModel }
+        let viewModel = ManagerViewModel(services: services)
+        managerViewModel = viewModel
+        return viewModel
     }
 
     @objc private func quit() {

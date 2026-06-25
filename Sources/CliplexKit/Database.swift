@@ -383,6 +383,28 @@ public final class ClipStore {
         }
     }
 
+    /// Persists a new folder display order (assigns `sort_order = position`).
+    public func setFolderOrder(_ orderedIDs: [Int64]) throws {
+        try dbQueue.write { db in
+            for (index, id) in orderedIDs.enumerated() {
+                try db.execute(
+                    sql: "UPDATE snippet_folders SET sort_order = ? WHERE id = ?",
+                    arguments: [index, id])
+            }
+        }
+    }
+
+    /// Persists a new snippet display order (assigns `sort_order = position`).
+    public func setSnippetOrder(_ orderedIDs: [Int64]) throws {
+        try dbQueue.write { db in
+            for (index, id) in orderedIDs.enumerated() {
+                try db.execute(
+                    sql: "UPDATE snippets SET sort_order = ? WHERE id = ?",
+                    arguments: [index, id])
+            }
+        }
+    }
+
     /// Full-text search over snippet titles and contents.
     public func searchSnippets(_ query: String, limit: Int64) throws -> [Snippet] {
         try dbQueue.read { db in
