@@ -43,7 +43,7 @@ struct PanelView: View {
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(Theme.accent)
             TextField(
-                viewModel.mode == .clipboard ? "Search clipboard…" : "Search snippets…",
+                viewModel.searchPlaceholder,
                 text: $viewModel.query
             )
             .textFieldStyle(.plain)
@@ -63,6 +63,8 @@ struct PanelView: View {
                 let isOn = viewModel.mode == mode
                 Text(mode.label)
                     .font(.system(size: 10.5, weight: .semibold))
+                    .lineLimit(1)
+                    .fixedSize()
                     .foregroundStyle(isOn ? Theme.accentInk : Theme.secondaryText)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
@@ -105,12 +107,18 @@ struct PanelView: View {
     }
 
     private var emptyState: some View {
-        Text(viewModel.query.isEmpty
-             ? (viewModel.mode == .clipboard ? "Clipboard is empty" : "No snippets yet")
-             : "No matches")
+        Text(viewModel.query.isEmpty ? emptyMessage : "No matches")
             .font(.system(size: 13))
             .foregroundStyle(Theme.mutedText)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var emptyMessage: String {
+        switch viewModel.mode {
+        case .clipboard: return "Clipboard is empty"
+        case .snippets: return "No snippets yet"
+        case .actions: return "No actions yet"
+        }
     }
 
     @ViewBuilder
@@ -130,7 +138,7 @@ struct PanelView: View {
                 row: row,
                 quickIndex: quickIndex,
                 selected: viewModel.isRowSelected(flatIndex),
-                indented: viewModel.mode == .snippets && viewModel.query.isEmpty
+                indented: viewModel.showsFolderTree && viewModel.query.isEmpty
             )
             .onContinuousHover(coordinateSpace: .global) { phase in
                 if case let .active(location) = phase {
@@ -185,13 +193,17 @@ struct PanelView: View {
 
     private var hints: some View {
         HStack(spacing: 6) {
-            if viewModel.mode == .clipboard {
+            switch viewModel.mode {
+            case .clipboard:
                 HintKey("⏎"); Text("paste").hintLabel()
                 HintKey("⌘P"); Text("pin").hintLabel()
                 HintKey("⌘S"); Text("snippet").hintLabel()
-            } else {
+            case .snippets:
                 HintKey("⏎"); Text("paste").hintLabel()
-                HintKey("⇥"); Text("clips").hintLabel()
+                HintKey("⇥"); Text("next").hintLabel()
+            case .actions:
+                HintKey("⏎"); Text("run").hintLabel()
+                HintKey("⇥"); Text("next").hintLabel()
             }
         }
     }

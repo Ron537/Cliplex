@@ -83,6 +83,99 @@ public struct Snippet: Identifiable, Equatable, Sendable {
     public var updatedAt: Int64
 }
 
+/// What an ``ActionItem`` does when invoked. Stored as a lowercase string for
+/// forward compatibility.
+public enum ActionType: String, Codable, Sendable, CaseIterable {
+    /// Open a URL (the `value`, with `{clipboard}` expanded) in the default browser.
+    case openURL = "open_url"
+    /// Launch an application (the `value` is a bundle id or an app path).
+    case openApp = "open_app"
+    /// Reveal/open a file or folder (the `value` is a filesystem path).
+    case openPath = "open_path"
+    /// Transform the current clipboard text in place (see ``transform``).
+    case transform
+
+    public static func lenient(_ raw: String) -> ActionType {
+        ActionType(rawValue: raw) ?? .openURL
+    }
+
+    public var label: String {
+        switch self {
+        case .openURL: return "Open URL"
+        case .openApp: return "Open App"
+        case .openPath: return "Open File / Folder"
+        case .transform: return "Transform Clipboard"
+        }
+    }
+
+    public var symbol: String {
+        switch self {
+        case .openURL: return "link"
+        case .openApp: return "app"
+        case .openPath: return "folder"
+        case .transform: return "wand.and.stars"
+        }
+    }
+}
+
+/// A pure, in-place transformation applied to the current clipboard text.
+public enum ActionTransform: String, Codable, Sendable, CaseIterable {
+    case uppercase
+    case lowercase
+    case titlecase
+    case trim
+    case base64Encode = "base64_encode"
+    case base64Decode = "base64_decode"
+    case urlEncode = "url_encode"
+    case urlDecode = "url_decode"
+    case jsonPretty = "json_pretty"
+    case jsonMinify = "json_minify"
+    case sha256
+
+    public static func lenient(_ raw: String) -> ActionTransform {
+        ActionTransform(rawValue: raw) ?? .uppercase
+    }
+
+    public var label: String {
+        switch self {
+        case .uppercase: return "UPPERCASE"
+        case .lowercase: return "lowercase"
+        case .titlecase: return "Title Case"
+        case .trim: return "Trim Whitespace"
+        case .base64Encode: return "Base64 Encode"
+        case .base64Decode: return "Base64 Decode"
+        case .urlEncode: return "URL Encode"
+        case .urlDecode: return "URL Decode"
+        case .jsonPretty: return "JSON Pretty-Print"
+        case .jsonMinify: return "JSON Minify"
+        case .sha256: return "SHA-256 Hash"
+        }
+    }
+}
+
+/// An action folder (groups ``ActionItem``s, mirroring ``SnippetFolder``).
+public struct ActionFolder: Identifiable, Equatable, Sendable {
+    public var id: Int64
+    public var name: String
+    public var sortOrder: Int64
+    public var createdAt: Int64
+}
+
+/// A saved quick action.
+public struct ActionItem: Identifiable, Equatable, Sendable {
+    public var id: Int64
+    public var folderId: Int64?
+    public var title: String
+    public var type: ActionType
+    /// The URL template / app id-or-path / filesystem path. Empty for transforms.
+    public var value: String
+    /// The transform to apply (only meaningful when `type == .transform`).
+    public var transform: ActionTransform?
+    public var sortOrder: Int64
+    public var createdAt: Int64
+    public var updatedAt: Int64
+}
+
 /// Returns the current time in Unix epoch milliseconds.
 public func nowMillis() -> Int64 {
     Int64(Date().timeIntervalSince1970 * 1000)

@@ -67,7 +67,12 @@ struct RowView: View {
 
     @ViewBuilder
     private var leadingAccessory: some View {
-        if let clipKind = row.clipKind, clipKind == .color, let color = Color(hexString: row.title) {
+        if let actionType = row.actionType {
+            Image(systemName: actionType.symbol)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(Theme.accent)
+                .frame(width: 14)
+        } else if let clipKind = row.clipKind, clipKind == .color, let color = Color(hexString: row.title) {
             RoundedRectangle(cornerRadius: 3)
                 .fill(color)
                 .frame(width: 12, height: 12)

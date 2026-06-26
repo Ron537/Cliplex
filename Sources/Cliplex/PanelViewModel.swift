@@ -26,10 +26,19 @@ final class PanelViewModel: ObservableObject {
     var requestSettings: () -> Void = {}
 
     private let services: AppServices
-    private var collapsed: Set<Int64> = []
+    /// Collapsed folder keys, kept separately per mode: snippet and action
+    /// folder ids share the same Int64 space (both autoincrement from 1), so a
+    /// single set would leak collapse state across the Snippets/Actions trees.
+    private var collapsedByMode: [PanelMode: Set<Int64>] = [:]
+    private var collapsed: Set<Int64> {
+        get { collapsedByMode[mode] ?? [] }
+        set { collapsedByMode[mode] = newValue }
+    }
     private var clipRows: [DisplayRow] = []
     private var snippetRows: [DisplayRow] = []
     private var folders: [SnippetFolder] = []
+    private var actionRows: [DisplayRow] = []
+    private var actionFolders: [ActionFolder] = []
     private var cancellables: Set<AnyCancellable> = []
     private var toastWork: DispatchWorkItem?
     private var lastHoverLocation = CGPoint(x: -1, y: -1)
@@ -79,6 +88,9 @@ final class PanelViewModel: ObservableObject {
         case .snippets:
             folders = services.folders()
             snippetRows = services.snippets(query: query).map(DisplayRow.init(snippet:))
+        case .actions:
+            actionFolders = services.actionFolders()
+            actionRows = services.actions(query: query).map(DisplayRow.init(action:))
         }
         rebuild()
     }
@@ -90,7 +102,9 @@ final class PanelViewModel: ObservableObject {
             clips: clipRows,
             snippets: snippetRows,
             folders: folders,
-            collapsed: collapsed
+            collapsed: collapsed,
+            actions: actionRows,
+            actionFolders: actionFolders
         )
         if selection >= layout.nav.count {
             selection = max(0, layout.nav.count - 1)
@@ -138,8 +152,26 @@ final class PanelViewModel: ObservableObject {
     }
 
     var statusText: String {
-        "\(rowCount) \(mode == .clipboard ? "clips" : "snippets")"
+        let noun: String
+        switch mode {
+        case .clipboard: noun = "clips"
+        case .snippets: noun = "snippets"
+        case .actions: noun = "actions"
+        }
+        return "\(rowCount) \(noun)"
     }
+
+    var searchPlaceholder: String {
+        switch mode {
+        case .clipboard: return "Search clipboard…"
+        case .snippets: return "Search snippets…"
+        case .actions: return "Search actions…"
+        }
+    }
+
+    /// Whether the current mode renders a collapsible folder tree (snippets and
+    /// actions), used for row indentation in the view.
+    var showsFolderTree: Bool { mode == .snippets || mode == .actions }
 
     // MARK: - Actions
 
@@ -153,7 +185,10 @@ final class PanelViewModel: ObservableObject {
     }
 
     func cycleMode(forward: Bool) {
-        switchMode(to: mode == .clipboard ? .snippets : .clipboard)
+        let all = PanelMode.allCases
+        guard let i = all.firstIndex(of: mode) else { return }
+        let next = all[(i + (forward ? 1 : all.count - 1)) % all.count]
+        switchMode(to: next)
     }
 
     func move(_ delta: Int) {
@@ -202,6 +237,22 @@ final class PanelViewModel: ObservableObject {
             services.pasteClip(id: row.id, hidePanel: hide)
         case .snippet:
             services.pasteSnippet(id: row.id, hidePanel: hide)
+        case .action:
+            runAction(id: row.id)
+        }
+    }
+
+    /// Runs an action and reflects the outcome: opens close the panel; a
+    /// transform shows a brief toast and keeps the panel open; a failure shows
+    /// the reason.
+    private func runAction(id: Int64) {
+        switch services.runAction(id: id) {
+        case .opened:
+            requestHide()
+        case let .transformed(message):
+            showToast(message)
+        case let .failed(message):
+            showToast(message)
         }
     }
 
@@ -229,13 +280,17 @@ final class PanelViewModel: ObservableObject {
         requestSettings()
     }
 
-    // MARK: - Tree navigation (snippets)
+    // MARK: - Tree navigation (snippets & actions)
 
-    /// Left arrow: collapse the selected folder, or jump from a snippet to its
+    /// Whether the current mode renders a collapsible folder tree (snippets and
+    /// actions do; the clipboard groups by time and isn't a tree).
+    private var isFolderTreeMode: Bool { showsFolderTree }
+
+    /// Left arrow: collapse the selected folder, or jump from a row to its
     /// parent folder header. Returns `true` when handled (so the key is consumed
     /// instead of moving the search-field cursor).
     func collapseOrParent() -> Bool {
-        guard mode == .snippets, !isSearching else { return false }
+        guard isFolderTreeMode, !isSearching else { return false }
         switch navSelection {
         case let .header(key):
             if !collapsed.contains(key) { setCollapsed(key, true) }
@@ -251,7 +306,7 @@ final class PanelViewModel: ObservableObject {
     /// Right arrow: expand a collapsed folder ("if collapsed and I get to it,
     /// expand it"), or step into an expanded folder's first row.
     func expandOrChild() -> Bool {
-        guard mode == .snippets, !isSearching else { return false }
+        guard isFolderTreeMode, !isSearching else { return false }
         switch navSelection {
         case let .header(key):
             if collapsed.contains(key) { setCollapsed(key, false) }

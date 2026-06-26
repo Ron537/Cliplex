@@ -1,21 +1,19 @@
 import SwiftUI
 import CliplexKit
-import KeyboardShortcuts
 
-// MARK: - Snippets window
-
-// MARK: - Snippets
-
-struct SnippetsView: View {
-    @ObservedObject var viewModel: ManagerViewModel
+/// The Actions manager: a folders sidebar, an action list, and an inline editor
+/// (title + type picker + value/transform). Mirrors `SnippetsView`, reusing the
+/// shared dialog/resizer/reorder components.
+struct ActionsView: View {
+    @ObservedObject var viewModel: ActionsViewModel
     @State private var hoveredFolder: Int64?
-    @State private var hoveredSnippet: Int64?
+    @State private var hoveredAction: Int64?
     @State private var folderWidth: CGFloat = 200
-    @State private var listWidth: CGFloat = 290
+    @State private var listWidth: CGFloat = 300
 
     private let editorMinWidth: CGFloat = 360
     private let folderRange: ClosedRange<CGFloat> = 170...300
-    private let listRange: ClosedRange<CGFloat> = 230...460
+    private let listRange: ClosedRange<CGFloat> = 240...460
 
     var body: some View {
         GeometryReader { geo in
@@ -30,7 +28,7 @@ struct SnippetsView: View {
                     maxWidth: max(folderRange.lowerBound,
                                   min(folderRange.upperBound, geo.size.width - panes.list - editorMinWidth - 2))
                 )
-                snippetList
+                actionList
                     .frame(width: panes.list)
                     .frame(maxHeight: .infinity)
                 PaneResizer(
@@ -50,15 +48,12 @@ struct SnippetsView: View {
                 .animation(.easeOut(duration: 0.16), value: viewModel.isNamingFolder)
                 .animation(.easeOut(duration: 0.16), value: viewModel.isRenamingFolder)
                 .animation(.easeOut(duration: 0.16), value: viewModel.confirmingFolderDelete)
-                .animation(.easeOut(duration: 0.16), value: viewModel.confirmingSnippetDelete)
+                .animation(.easeOut(duration: 0.16), value: viewModel.confirmingActionDelete)
         }
     }
 
-    /// Resolves the folder/list pane widths for the current container so the
-    /// editor always keeps at least its minimum width — preventing the content
-    /// from overflowing the window when panes are widened or the window shrinks.
     private func paneWidths(container: CGFloat) -> (folder: CGFloat, list: CGFloat) {
-        let available = max(0, container - 2) // two 1px resizers
+        let available = max(0, container - 2)
         var folder = folderWidth.clamped(to: folderRange)
         var list = listWidth.clamped(to: listRange)
         let maxPanes = max(0, available - editorMinWidth)
@@ -70,6 +65,8 @@ struct SnippetsView: View {
         }
         return (folder, list)
     }
+
+    // MARK: - Dialogs
 
     @ViewBuilder
     private var dialogOverlay: some View {
@@ -106,22 +103,24 @@ struct SnippetsView: View {
                     onConfirm: viewModel.confirmDeleteFolder
                 )
             }
-        } else if viewModel.confirmingSnippetDelete {
-            DialogScrim(onDismiss: { viewModel.confirmingSnippetDelete = false }) {
+        } else if viewModel.confirmingActionDelete {
+            DialogScrim(onDismiss: { viewModel.confirmingActionDelete = false }) {
                 ConfirmDialog(
-                    title: "Delete “\(viewModel.snippetPendingDeleteName)”?",
-                    message: "This snippet will be permanently deleted. This can’t be undone.",
-                    confirmTitle: "Delete Snippet",
-                    onCancel: { viewModel.confirmingSnippetDelete = false },
-                    onConfirm: viewModel.confirmDeleteSnippet
+                    title: "Delete “\(viewModel.actionPendingDeleteName)”?",
+                    message: "This action will be permanently deleted. This can’t be undone.",
+                    confirmTitle: "Delete Action",
+                    onCancel: { viewModel.confirmingActionDelete = false },
+                    onConfirm: viewModel.confirmDeleteAction
                 )
             }
         }
     }
 
+    // MARK: - Folder sidebar
+
     private var folderSidebar: some View {
         VStack(alignment: .leading, spacing: 2) {
-            folderButton(name: "All snippets", glyph: "tray.full", folder: nil)
+            folderButton(name: "All actions", glyph: "bolt.fill", folder: nil)
             ForEach(viewModel.folders) { folder in
                 folderButton(name: folder.name, glyph: "folder", folder: folder)
             }
@@ -142,35 +141,12 @@ struct SnippetsView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-
-            HStack(spacing: 6) {
-                sidebarActionButton("Import", "square.and.arrow.down") { viewModel.importSnippets() }
-                sidebarActionButton("Export", "square.and.arrow.up") { viewModel.exportSnippets() }
-            }
-            .padding(.top, 2)
         }
         .padding(10)
         .frame(maxHeight: .infinity, alignment: .top)
     }
 
-    private func sidebarActionButton(_ title: String, _ glyph: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: glyph).font(.system(size: 11))
-                Text(title).font(.system(size: 12))
-            }
-            .foregroundStyle(Theme.secondaryText)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 7)
-            .background(Theme.fieldBackground, in: RoundedRectangle(cornerRadius: 7))
-            .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Theme.hairline, lineWidth: 1))
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .help("\(title) all snippets")
-    }
-
-    private func folderButton(name: String, glyph: String, folder: SnippetFolder?) -> some View {
+    private func folderButton(name: String, glyph: String, folder: ActionFolder?) -> some View {
         let id = folder?.id
         let isActive = viewModel.selectedFolderID == id
         return HStack(spacing: 8) {
@@ -195,34 +171,36 @@ struct SnippetsView: View {
         .onHover { hovering in hoveredFolder = hovering ? id : (hoveredFolder == id ? nil : hoveredFolder) }
         .onTapGesture { viewModel.selectFolder(id) }
         .modifier(ReorderDrag(
-            kind: "folder",
+            kind: "actionfolder",
             id: folder?.id,
             onDrop: { source, target in viewModel.reorderFolder(source, before: target) }
         ))
     }
 
-    private var snippetList: some View {
+    // MARK: - Action list
+
+    private var actionList: some View {
         VStack(spacing: 0) {
             HStack {
                 Text(viewModel.selectedFolderName)
                     .font(.system(size: 13, weight: .semibold))
                     .lineLimit(1)
                 Spacer()
-                GhostButton(title: "＋ New snippet", accent: true) { viewModel.newSnippet() }
+                GhostButton(title: "＋ New action", accent: true) { viewModel.newAction() }
                     .keyboardShortcut("n", modifiers: .command)
             }
             .padding(.horizontal, 12).padding(.vertical, 11)
             Divider().overlay(Theme.hairline)
 
-            if viewModel.snippets.isEmpty && !viewModel.isDraft {
-                Text("No snippets yet").font(.system(size: 13)).foregroundStyle(Theme.mutedText)
+            if viewModel.actions.isEmpty && !viewModel.isDraft {
+                Text("No actions yet").font(.system(size: 13)).foregroundStyle(Theme.mutedText)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 2) {
                         if viewModel.isDraft { draftRow }
-                        ForEach(viewModel.snippets) { snippet in
-                            snippetRow(snippet)
+                        ForEach(viewModel.actions) { action in
+                            actionRow(action)
                         }
                     }
                     .padding(6)
@@ -231,24 +209,21 @@ struct SnippetsView: View {
         }
     }
 
-    /// The in-progress, unsaved snippet shown at the top of the list.
     private var draftRow: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            HStack(spacing: 6) {
-                Text(viewModel.draftTitle.isEmpty ? "New snippet" : viewModel.draftTitle)
-                    .font(.system(size: 13, weight: .semibold))
-                    .italic(viewModel.draftTitle.isEmpty)
-                    .foregroundStyle(viewModel.draftTitle.isEmpty ? Theme.mutedText : Theme.primaryText)
-                    .lineLimit(1)
-                Spacer()
-                Text("DRAFT")
-                    .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                    .foregroundStyle(Theme.filesTag)
-                    .padding(.horizontal, 5).padding(.vertical, 2)
-                    .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Theme.filesTag.opacity(0.4), lineWidth: 1))
-            }
-            Text(viewModel.draftContent.isEmpty ? "editing…" : String(viewModel.draftContent.prefix(60)))
-                .font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.mutedText).lineLimit(1)
+        HStack(spacing: 8) {
+            Image(systemName: viewModel.draftType.symbol)
+                .font(.system(size: 11)).foregroundStyle(Theme.filesTag).frame(width: 16)
+            Text(viewModel.draftTitle.isEmpty ? "New action" : viewModel.draftTitle)
+                .font(.system(size: 13, weight: .semibold))
+                .italic(viewModel.draftTitle.isEmpty)
+                .foregroundStyle(viewModel.draftTitle.isEmpty ? Theme.mutedText : Theme.primaryText)
+                .lineLimit(1)
+            Spacer()
+            Text("DRAFT")
+                .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                .foregroundStyle(Theme.filesTag)
+                .padding(.horizontal, 5).padding(.vertical, 2)
+                .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Theme.filesTag.opacity(0.4), lineWidth: 1))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 10).padding(.vertical, 8)
@@ -260,39 +235,50 @@ struct SnippetsView: View {
         )
     }
 
-    private func snippetRow(_ snippet: Snippet) -> some View {
-        let isActive = !viewModel.isDraft && viewModel.selectedSnippetID == snippet.id
+    private func actionRow(_ action: ActionItem) -> some View {
+        let isActive = !viewModel.isDraft && viewModel.selectedActionID == action.id
         return HStack(spacing: 8) {
+            Image(systemName: action.type.symbol)
+                .font(.system(size: 12)).foregroundStyle(Theme.accent).frame(width: 16)
             VStack(alignment: .leading, spacing: 3) {
-                Text(snippet.title.isEmpty ? "Untitled" : snippet.title)
+                Text(action.title.isEmpty ? "Untitled" : action.title)
                     .font(.system(size: 13)).foregroundStyle(Theme.primaryText).lineLimit(1)
-                Text(snippet.content.prefix(60))
+                Text(subtitle(for: action))
                     .font(.system(size: 11)).foregroundStyle(Theme.mutedText).lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            HoverIconButton(systemName: "trash", help: "Delete", visible: hoveredSnippet == snippet.id) {
-                viewModel.requestDeleteSnippet(snippet)
+            HoverIconButton(systemName: "trash", help: "Delete", visible: hoveredAction == action.id) {
+                viewModel.requestDeleteAction(action)
             }
         }
         .padding(.horizontal, 10).padding(.vertical, 8)
         .background(isActive ? Theme.accent.opacity(0.14) : .clear, in: RoundedRectangle(cornerRadius: 7))
         .contentShape(Rectangle())
-        .onHover { hovering in hoveredSnippet = hovering ? snippet.id : (hoveredSnippet == snippet.id ? nil : hoveredSnippet) }
-        .onTapGesture { viewModel.openSnippet(snippet) }
+        .onHover { hovering in hoveredAction = hovering ? action.id : (hoveredAction == action.id ? nil : hoveredAction) }
+        .onTapGesture { viewModel.openAction(action) }
         .modifier(ReorderDrag(
-            kind: "snippet",
-            id: viewModel.canReorderSnippets ? snippet.id : nil,
-            onDrop: { source, target in viewModel.reorderSnippet(source, before: target) }
+            kind: "action",
+            id: viewModel.canReorderActions ? action.id : nil,
+            onDrop: { source, target in viewModel.reorderAction(source, before: target) }
         ))
     }
+
+    private func subtitle(for action: ActionItem) -> String {
+        switch action.type {
+        case .transform: return action.transform?.label ?? "Transform"
+        default: return action.value.isEmpty ? action.type.label : action.value
+        }
+    }
+
+    // MARK: - Editor
 
     private var editor: some View {
         Group {
             if !viewModel.isEditing {
                 VStack(spacing: 10) {
-                    Text("Select a snippet, or")
+                    Text("Select an action, or")
                         .font(.system(size: 13)).foregroundStyle(Theme.mutedText)
-                    GhostButton(title: "＋ New snippet", accent: true) { viewModel.newSnippet() }
+                    GhostButton(title: "＋ New action", accent: true) { viewModel.newAction() }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -307,11 +293,8 @@ struct SnippetsView: View {
                     .padding(.horizontal, 16).padding(.top, 16).padding(.bottom, 12)
                     Divider().overlay(Theme.hairline)
 
-                    TextEditor(text: $viewModel.draftContent)
-                        .font(.system(size: 13, design: .monospaced))
-                        .scrollContentBackground(.hidden)
-                        .padding(10)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    editorForm
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
                     Divider().overlay(Theme.hairline)
                     editorFooter
@@ -320,11 +303,87 @@ struct SnippetsView: View {
         }
     }
 
+    private var editorForm: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 6) {
+                fieldLabel("Type")
+                Picker("", selection: $viewModel.draftType) {
+                    ForEach(ActionType.allCases, id: \.self) { type in
+                        Text(type.label).tag(type)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.menu)
+                .frame(maxWidth: 260, alignment: .leading)
+            }
+
+            if viewModel.draftUsesValue {
+                VStack(alignment: .leading, spacing: 6) {
+                    fieldLabel(valueLabel)
+                    TextField(valuePlaceholder, text: $viewModel.draftValue)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 13, design: .monospaced))
+                        .padding(.horizontal, 10).padding(.vertical, 8)
+                        .background(Theme.fieldBackground, in: RoundedRectangle(cornerRadius: 7))
+                        .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Theme.hairline, lineWidth: 1))
+                    Text(valueHint)
+                        .font(.system(size: 11)).foregroundStyle(Theme.mutedText)
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 6) {
+                    fieldLabel("Transform")
+                    Picker("", selection: $viewModel.draftTransform) {
+                        ForEach(ActionTransform.allCases, id: \.self) { transform in
+                            Text(transform.label).tag(transform)
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                    .frame(maxWidth: 260, alignment: .leading)
+                    Text("Applies to the current clipboard text and writes the result back.")
+                        .font(.system(size: 11)).foregroundStyle(Theme.mutedText)
+                }
+            }
+        }
+        .padding(16)
+    }
+
+    private func fieldLabel(_ text: String) -> some View {
+        Text(text.uppercased())
+            .font(.system(size: 9.5, weight: .semibold))
+            .tracking(1.0)
+            .foregroundStyle(Theme.mutedText)
+    }
+
+    private var valueLabel: String {
+        switch viewModel.draftType {
+        case .openURL: return "URL"
+        case .openApp: return "Application"
+        case .openPath: return "File or Folder Path"
+        case .transform: return "Value"
+        }
+    }
+
+    private var valuePlaceholder: String {
+        switch viewModel.draftType {
+        case .openURL: return "https://github.com/search?q={clipboard}"
+        case .openApp: return "com.apple.Safari  or  /Applications/Safari.app"
+        case .openPath: return "~/Projects/my-repo"
+        case .transform: return ""
+        }
+    }
+
+    private var valueHint: String {
+        switch viewModel.draftType {
+        case .openURL: return "Use {clipboard} to insert the current clipboard text (URL-encoded)."
+        case .openApp: return "A bundle identifier or an app path. {clipboard} is supported."
+        case .openPath: return "Opens in Finder / the default app. {clipboard} and ~ are supported."
+        case .transform: return ""
+        }
+    }
+
     private var editorFooter: some View {
         HStack(spacing: 14) {
-            Text("\(viewModel.draftLineCount) lines · \(viewModel.draftCharCount) chars")
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundStyle(Theme.mutedText)
             if viewModel.hasUnsavedChanges {
                 HStack(spacing: 6) {
                     Circle().fill(Theme.filesTag).frame(width: 7, height: 7)
@@ -338,115 +397,9 @@ struct SnippetsView: View {
                 GhostButton(title: "Discard", danger: true) { viewModel.discardDraft() }
                     .keyboardShortcut(.cancelAction)
             }
-            PrimaryButton(title: "Save") { viewModel.saveSnippet() }
+            PrimaryButton(title: "Save") { viewModel.save() }
                 .keyboardShortcut("s", modifiers: .command)
         }
         .padding(.horizontal, 16).padding(.vertical, 11)
-    }
-}
-
-// MARK: - Settings window
-
-struct SettingsView: View {
-    @ObservedObject var viewModel: ManagerViewModel
-
-    var body: some View {
-        Form {
-            Section {
-                LabeledContent("Maximum history items") {
-                    TextField("", value: $viewModel.settings.maxHistory, format: .number)
-                        .multilineTextAlignment(.trailing)
-                        .frame(width: 90)
-                }
-            } header: {
-                Text("Clipboard history")
-            } footer: {
-                Text("Older unpinned clips beyond the maximum are removed.")
-                    .foregroundStyle(.secondary)
-            }
-
-            Section {
-                Toggle("Ignore concealed & password clips", isOn: $viewModel.settings.ignoreConcealed)
-            } header: {
-                Text("Privacy")
-            } footer: {
-                Text("Clips that apps mark as secret — like password managers — are never stored.")
-                    .foregroundStyle(.secondary)
-            }
-
-            Section("Behavior") {
-                Toggle("Paste automatically on select", isOn: $viewModel.settings.pasteOnSelect)
-                Toggle("Launch Cliplex at login", isOn: $viewModel.autostartEnabled)
-            }
-
-            Section {
-                KeyboardShortcuts.Recorder("Open Cliplex", name: .openCliplex)
-                KeyboardShortcuts.Recorder("Open Snippets", name: .openSnippets)
-                KeyboardShortcuts.Recorder("Open Actions", name: .openActions)
-            } header: {
-                Text("Shortcuts")
-            } footer: {
-                Text("“Open Cliplex” shows the clipboard history; “Open Snippets” and “Open Actions” open straight to those tabs.")
-                    .foregroundStyle(.secondary)
-            }
-
-            Section("Appearance") {
-                Picker("Theme", selection: $viewModel.settings.theme) {
-                    Text("System").tag(Appearance.system)
-                    Text("Dark").tag(Appearance.dark)
-                    Text("Light").tag(Appearance.light)
-                }
-                .pickerStyle(.segmented)
-            }
-        }
-        .formStyle(.grouped)
-        .tint(Theme.accent)
-        .frame(width: 460, height: 560)
-        // Settings apply immediately (native Settings behavior). Number fields
-        // commit on Return / focus loss, so this doesn't churn while typing.
-        .onChange(of: viewModel.settings) { viewModel.applySettings() }
-        .onChange(of: viewModel.autostartEnabled) { viewModel.applyAutostart() }
-    }
-}
-
-// MARK: - Buttons
-
-struct GhostButton: View {
-    let title: String
-    var accent = false
-    var danger = false
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 11, design: .monospaced))
-                .lineLimit(1)
-                .fixedSize()
-                .foregroundStyle(accent ? Theme.accent : Theme.secondaryText)
-                .padding(.horizontal, 9).padding(.vertical, 5)
-                .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Theme.hairline, lineWidth: 1))
-        }
-        .buttonStyle(.plain)
-        .fixedSize()
-    }
-}
-
-struct PrimaryButton: View {
-    let title: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 12, weight: .semibold))
-                .lineLimit(1)
-                .fixedSize()
-                .foregroundStyle(Theme.accentInk)
-                .padding(.horizontal, 16).padding(.vertical, 8)
-                .background(Theme.accent, in: RoundedRectangle(cornerRadius: 7))
-        }
-        .buttonStyle(.plain)
-        .fixedSize()
     }
 }

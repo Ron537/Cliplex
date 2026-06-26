@@ -1,23 +1,26 @@
 import Foundation
 
-/// The two fully-separated panel modes.
+/// The fully-separated panel modes.
 public enum PanelMode: CaseIterable {
     case clipboard
     case snippets
+    case actions
 
     public var label: String {
         switch self {
         case .clipboard: return "Clips"
         case .snippets: return "Snippets"
+        case .actions: return "Actions"
         }
     }
 }
 
-/// A unified row rendered by the panel list (a clip or a snippet).
+/// A unified row rendered by the panel list (a clip, a snippet, or an action).
 public struct DisplayRow: Identifiable, Equatable {
     public enum Kind: Equatable {
         case clip(ClipKind)
         case snippet
+        case action(ActionType)
     }
 
     public let kind: Kind
@@ -29,14 +32,32 @@ public struct DisplayRow: Identifiable, Equatable {
 
     public var isSnippet: Bool { kind == .snippet }
 
+    public var isAction: Bool {
+        if case .action = kind { return true }
+        return false
+    }
+
     public var clipKind: ClipKind? {
         if case let .clip(k) = kind { return k }
         return nil
     }
 
+    public var actionType: ActionType? {
+        if case let .action(t) = kind { return t }
+        return nil
+    }
+
     /// Stable list/scroll identity derived from content (not list position), so
     /// SwiftUI diffs rows correctly when the list changes or the mode switches.
-    public var listID: String { "r:\(isSnippet ? "s" : "c"):\(id)" }
+    public var listID: String { "r:\(kindTag):\(id)" }
+
+    private var kindTag: String {
+        switch kind {
+        case .clip: return "c"
+        case .snippet: return "s"
+        case .action: return "a"
+        }
+    }
 
     public init(clip: Clip) {
         self.kind = .clip(clip.kind)
@@ -54,6 +75,15 @@ public struct DisplayRow: Identifiable, Equatable {
         self.pinned = false
         self.updatedAt = snippet.updatedAt
         self.folderID = snippet.folderId
+    }
+
+    public init(action: ActionItem) {
+        self.kind = .action(action.type)
+        self.id = action.id
+        self.title = action.title
+        self.pinned = false
+        self.updatedAt = action.updatedAt
+        self.folderID = action.folderId
     }
 }
 
@@ -113,15 +143,17 @@ public enum TimeBucket: String, CaseIterable {
 }
 
 /// Builds the grouped, flattened layout for the active mode — clipboard groups
-/// by time (Pinned + day buckets); snippets group by folder (a collapsible
-/// tree). While searching, results are shown as a single flat list.
+/// by time (Pinned + day buckets); snippets and actions group by folder (a
+/// collapsible tree). While searching, results are shown as a single flat list.
 public func buildPanelLayout(
     mode: PanelMode,
     query: String,
     clips: [DisplayRow],
     snippets: [DisplayRow],
     folders: [SnippetFolder],
-    collapsed: Set<Int64>
+    collapsed: Set<Int64>,
+    actions: [DisplayRow] = [],
+    actionFolders: [ActionFolder] = []
 ) -> PanelLayout {
     let searching = !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     var layout = PanelLayout()
@@ -132,6 +164,22 @@ public func buildPanelLayout(
         var folderKey: Int64?
     }
     var groups: [Group] = []
+
+    /// Groups items into a folder tree: one group per folder (in order), plus a
+    /// trailing "Uncategorized" group for unfiled items.
+    func folderTree(rows: [DisplayRow], folders: [(id: Int64, name: String)]) -> [Group] {
+        var byFolder: [Int64: [DisplayRow]] = [:]
+        for row in rows {
+            byFolder[row.folderID ?? uncategorizedFolderKey, default: []].append(row)
+        }
+        var result = folders.map {
+            Group(label: $0.name, rows: byFolder[$0.id] ?? [], folderKey: $0.id)
+        }
+        if let unfiled = byFolder[uncategorizedFolderKey], !unfiled.isEmpty {
+            result.append(Group(label: "Uncategorized", rows: unfiled, folderKey: uncategorizedFolderKey))
+        }
+        return result
+    }
 
     switch mode {
     case .clipboard:
@@ -154,16 +202,13 @@ public func buildPanelLayout(
         if searching {
             groups.append(Group(label: nil, rows: snippets, folderKey: nil))
         } else {
-            var byFolder: [Int64: [DisplayRow]] = [:]
-            for row in snippets {
-                byFolder[row.folderID ?? uncategorizedFolderKey, default: []].append(row)
-            }
-            for folder in folders {
-                groups.append(Group(label: folder.name, rows: byFolder[folder.id] ?? [], folderKey: folder.id))
-            }
-            if let unfiled = byFolder[uncategorizedFolderKey], !unfiled.isEmpty {
-                groups.append(Group(label: "Uncategorized", rows: unfiled, folderKey: uncategorizedFolderKey))
-            }
+            groups = folderTree(rows: snippets, folders: folders.map { ($0.id, $0.name) })
+        }
+    case .actions:
+        if searching {
+            groups.append(Group(label: nil, rows: actions, folderKey: nil))
+        } else {
+            groups = folderTree(rows: actions, folders: actionFolders.map { ($0.id, $0.name) })
         }
     }
 

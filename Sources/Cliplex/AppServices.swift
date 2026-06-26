@@ -75,6 +75,29 @@ final class AppServices {
         return (byContent + byFolder).filter { seen.insert($0.id).inserted }
     }
 
+    func actionFolders() -> [ActionFolder] {
+        (try? store.listActionFolders()) ?? []
+    }
+
+    func actions(query: String) -> [ActionItem] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            return (try? store.listActions(folderID: nil)) ?? []
+        }
+
+        // Match action title/value (FTS)…
+        let byContent = (try? store.searchActions(trimmed, limit: 200)) ?? []
+        // …and also actions whose *folder name* matches the query.
+        let folders = (try? store.listActionFolders()) ?? []
+        let matchingFolderIDs = folders.filter {
+            $0.name.range(of: trimmed, options: .caseInsensitive) != nil
+        }.map(\.id)
+        let byFolder = matchingFolderIDs.flatMap { (try? store.listActions(folderID: $0)) ?? [] }
+
+        var seen = Set<Int64>()
+        return (byContent + byFolder).filter { seen.insert($0.id).inserted }
+    }
+
     // MARK: - Clip actions
 
     func togglePin(clipID: Int64, pinned: Bool) {
@@ -120,6 +143,92 @@ final class AppServices {
             return
         }
         finishPaste(hidePanel: hidePanel)
+    }
+
+    // MARK: - Actions
+
+    /// The outcome of running a quick action, so the panel can show feedback.
+    enum ActionOutcome {
+        /// A URL/app/path was opened. The panel should just close.
+        case opened
+        /// The clipboard was transformed in place; carries a short toast message.
+        case transformed(String)
+        /// Something failed; carries a short toast message.
+        case failed(String)
+    }
+
+    /// Runs a saved action: opens a URL/app/path, or transforms the clipboard
+    /// text in place. `{clipboard}` in URL/app/path values is expanded with the
+    /// current clipboard text (URL-encoded for URLs).
+    func runAction(id: Int64) -> ActionOutcome {
+        guard let action = try? store.action(id: id) else {
+            return .failed("action not found")
+        }
+        let clipboardText = currentClipboardText() ?? ""
+
+        switch action.type {
+        case .openURL:
+            guard let url = ActionLogic.resolvedURL(template: action.value, clipboard: clipboardText) else {
+                return .failed("invalid URL")
+            }
+            guard NSWorkspace.shared.open(url) else { return .failed("couldn't open URL") }
+            return .opened
+
+        case .openApp:
+            return openApp(action.value, clipboard: clipboardText)
+
+        case .openPath:
+            let expanded = ActionLogic.expand(action.value, clipboard: clipboardText, urlEncoded: false)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let path = (expanded as NSString).expandingTildeInPath
+            guard !path.isEmpty, FileManager.default.fileExists(atPath: path) else {
+                return .failed("path not found")
+            }
+            guard NSWorkspace.shared.open(URL(fileURLWithPath: path)) else {
+                return .failed("couldn't open path")
+            }
+            return .opened
+
+        case .transform:
+            guard let transform = action.transform else { return .failed("no transform set") }
+            guard !clipboardText.isEmpty else { return .failed("clipboard is empty") }
+            guard let result = ActionLogic.apply(transform, to: clipboardText) else {
+                return .failed("can't \(transform.label.lowercased()) this")
+            }
+            guard clipboard.write([ClipAsset(uti: UTI.text, bytes: Data(result.utf8))]) else {
+                return .failed("couldn't update clipboard")
+            }
+            return .transformed(transform.label.lowercased())
+        }
+    }
+
+    /// Opens an app referenced either by bundle identifier or by a path.
+    private func openApp(_ value: String, clipboard text: String) -> ActionOutcome {
+        let raw = ActionLogic.expand(value, clipboard: text, urlEncoded: false)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !raw.isEmpty else { return .failed("no app set") }
+
+        // A path (…/Foo.app) → open directly; otherwise treat it as a bundle id.
+        if raw.contains("/") || raw.lowercased().hasSuffix(".app") {
+            let path = (raw as NSString).expandingTildeInPath
+            if FileManager.default.fileExists(atPath: path) {
+                guard NSWorkspace.shared.open(URL(fileURLWithPath: path)) else {
+                    return .failed("couldn't open app")
+                }
+                return .opened
+            }
+        }
+        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: raw) {
+            guard NSWorkspace.shared.open(url) else { return .failed("couldn't open app") }
+            return .opened
+        }
+        return .failed("app not found")
+    }
+
+    /// The current clipboard's plain text, if any (used by `{clipboard}` and
+    /// transforms).
+    private func currentClipboardText() -> String? {
+        NSPasteboard.general.string(forType: .string)
     }
 
     /// Hides the panel and, when enabled and permitted, injects ⌘V.

@@ -7,4 +7,7 @@ extension KeyboardShortcuts.Name {
 
     /// Opens the panel focused on the Snippets tab. No default — opt-in.
     static let openSnippets = Self("openSnippets")
+
+    /// Opens the panel focused on the Actions tab. No default — opt-in.
+    static let openActions = Self("openActions")
 }

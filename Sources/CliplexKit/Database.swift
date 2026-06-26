@@ -433,6 +433,167 @@ public final class ClipStore {
         }
     }
 
+    // MARK: - Action folders
+
+    /// Creates an action folder, appended after existing folders.
+    @discardableResult
+    public func addActionFolder(name: String) throws -> ActionFolder {
+        try dbQueue.write { db in
+            let order = try Int64.fetchOne(
+                db, sql: "SELECT COALESCE(MAX(sort_order), -1) + 1 FROM action_folders") ?? 0
+            try db.execute(
+                sql: "INSERT INTO action_folders (name, sort_order, created_at) VALUES (?, ?, ?)",
+                arguments: [name, order, nowMillis()])
+            return try Self.fetchActionFolder(db, id: db.lastInsertedRowID)
+        }
+    }
+
+    /// Returns a single action folder by id.
+    public func actionFolder(id: Int64) throws -> ActionFolder {
+        try dbQueue.read { db in try Self.fetchActionFolder(db, id: id) }
+    }
+
+    /// Lists action folders in display order.
+    public func listActionFolders() throws -> [ActionFolder] {
+        try dbQueue.read { db in
+            try Row.fetchAll(
+                db,
+                sql: "SELECT id, name, sort_order, created_at FROM action_folders ORDER BY sort_order, id"
+            ).map(Self.actionFolder(from:))
+        }
+    }
+
+    /// Renames an action folder.
+    public func renameActionFolder(id: Int64, name: String) throws {
+        try dbQueue.write { db in
+            try db.execute(
+                sql: "UPDATE action_folders SET name = ? WHERE id = ?",
+                arguments: [name, id])
+            if db.changesCount == 0 { throw StoreError.notFound }
+        }
+    }
+
+    /// Deletes an action folder and its actions (cascade).
+    public func deleteActionFolder(id: Int64) throws {
+        try dbQueue.write { db in
+            try db.execute(sql: "DELETE FROM action_folders WHERE id = ?", arguments: [id])
+            if db.changesCount == 0 { throw StoreError.notFound }
+        }
+    }
+
+    /// Persists a new action-folder display order (assigns `sort_order = position`).
+    public func setActionFolderOrder(_ orderedIDs: [Int64]) throws {
+        try dbQueue.write { db in
+            for (index, id) in orderedIDs.enumerated() {
+                try db.execute(
+                    sql: "UPDATE action_folders SET sort_order = ? WHERE id = ?",
+                    arguments: [index, id])
+            }
+        }
+    }
+
+    // MARK: - Actions
+
+    /// Creates an action, appended within its folder.
+    @discardableResult
+    public func addAction(
+        folderID: Int64?, title: String, type: ActionType, value: String, transform: ActionTransform?
+    ) throws -> ActionItem {
+        try dbQueue.write { db in
+            let order = try Int64.fetchOne(
+                db,
+                sql: "SELECT COALESCE(MAX(sort_order), -1) + 1 FROM actions WHERE folder_id IS ?",
+                arguments: [folderID]) ?? 0
+            let now = nowMillis()
+            try db.execute(
+                sql: """
+                    INSERT INTO actions (folder_id, title, type, value, transform, sort_order, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                arguments: [folderID, title, type.rawValue, value, transform?.rawValue, order, now, now])
+            return try Self.fetchAction(db, id: db.lastInsertedRowID)
+        }
+    }
+
+    /// Returns a single action by id.
+    public func action(id: Int64) throws -> ActionItem {
+        try dbQueue.read { db in try Self.fetchAction(db, id: id) }
+    }
+
+    /// Lists actions, optionally filtered to a folder.
+    public func listActions(folderID: Int64?) throws -> [ActionItem] {
+        try dbQueue.read { db in
+            if let folderID {
+                return try Row.fetchAll(
+                    db,
+                    sql: "\(Self.actionColumns) FROM actions WHERE folder_id IS ? ORDER BY sort_order, id",
+                    arguments: [folderID]
+                ).map(Self.action(from:))
+            }
+            return try Row.fetchAll(
+                db,
+                sql: "\(Self.actionColumns) FROM actions ORDER BY folder_id, sort_order, id"
+            ).map(Self.action(from:))
+        }
+    }
+
+    /// Updates an action's fields.
+    public func updateAction(
+        id: Int64, title: String, type: ActionType, value: String, transform: ActionTransform?
+    ) throws {
+        try dbQueue.write { db in
+            try db.execute(
+                sql: "UPDATE actions SET title = ?, type = ?, value = ?, transform = ?, updated_at = ? WHERE id = ?",
+                arguments: [title, type.rawValue, value, transform?.rawValue, nowMillis(), id])
+            if db.changesCount == 0 { throw StoreError.notFound }
+        }
+    }
+
+    /// Deletes an action.
+    public func deleteAction(id: Int64) throws {
+        try dbQueue.write { db in
+            try db.execute(sql: "DELETE FROM actions WHERE id = ?", arguments: [id])
+            if db.changesCount == 0 { throw StoreError.notFound }
+        }
+    }
+
+    /// Persists a new action display order (assigns `sort_order = position`).
+    public func setActionOrder(_ orderedIDs: [Int64]) throws {
+        try dbQueue.write { db in
+            for (index, id) in orderedIDs.enumerated() {
+                try db.execute(
+                    sql: "UPDATE actions SET sort_order = ? WHERE id = ?",
+                    arguments: [index, id])
+            }
+        }
+    }
+
+    /// Full-text search over action titles and values.
+    public func searchActions(_ query: String, limit: Int64) throws -> [ActionItem] {
+        try dbQueue.read { db in
+            guard let fts = Search.buildFTSQuery(query) else {
+                return try Row.fetchAll(
+                    db,
+                    sql: "\(Self.actionColumns) FROM actions ORDER BY folder_id, sort_order, id LIMIT ?",
+                    arguments: [limit]
+                ).map(Self.action(from:))
+            }
+            return try Row.fetchAll(
+                db,
+                sql: """
+                    SELECT a.id, a.folder_id, a.title, a.type, a.value, a.transform,
+                           a.sort_order, a.created_at, a.updated_at
+                    FROM actions a
+                    JOIN actions_fts f ON a.id = f.rowid
+                    WHERE actions_fts MATCH ?
+                    ORDER BY bm25(actions_fts)
+                    LIMIT ?
+                    """,
+                arguments: [fts, limit]
+            ).map(Self.action(from:))
+        }
+    }
+
     // MARK: - Settings
 
     /// Reads a setting value by key.
@@ -520,6 +681,52 @@ public final class ClipStore {
             folderId: row["folder_id"],
             title: row["title"],
             content: row["content"],
+            sortOrder: row["sort_order"],
+            createdAt: row["created_at"],
+            updatedAt: row["updated_at"]
+        )
+    }
+
+    private static let actionColumns =
+        "SELECT id, folder_id, title, type, value, transform, sort_order, created_at, updated_at"
+
+    private static func fetchActionFolder(_ db: Database, id: Int64) throws -> ActionFolder {
+        guard let row = try Row.fetchOne(
+            db,
+            sql: "SELECT id, name, sort_order, created_at FROM action_folders WHERE id = ?",
+            arguments: [id]) else {
+            throw StoreError.notFound
+        }
+        return actionFolder(from: row)
+    }
+
+    private static func fetchAction(_ db: Database, id: Int64) throws -> ActionItem {
+        guard let row = try Row.fetchOne(
+            db,
+            sql: "\(actionColumns) FROM actions WHERE id = ?",
+            arguments: [id]) else {
+            throw StoreError.notFound
+        }
+        return action(from: row)
+    }
+
+    private static func actionFolder(from row: Row) -> ActionFolder {
+        ActionFolder(
+            id: row["id"],
+            name: row["name"],
+            sortOrder: row["sort_order"],
+            createdAt: row["created_at"]
+        )
+    }
+
+    private static func action(from row: Row) -> ActionItem {
+        ActionItem(
+            id: row["id"],
+            folderId: row["folder_id"],
+            title: row["title"],
+            type: ActionType.lenient(row["type"]),
+            value: row["value"],
+            transform: (row["transform"] as String?).map(ActionTransform.lenient),
             sortOrder: row["sort_order"],
             createdAt: row["created_at"],
             updatedAt: row["updated_at"]
@@ -620,5 +827,44 @@ public final class ClipStore {
         key    TEXT PRIMARY KEY,
         value  TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS action_folders (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        name        TEXT NOT NULL,
+        sort_order  INTEGER NOT NULL DEFAULT 0,
+        created_at  INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS actions (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        folder_id   INTEGER REFERENCES action_folders(id) ON DELETE CASCADE,
+        title       TEXT NOT NULL,
+        type        TEXT NOT NULL,
+        value       TEXT NOT NULL DEFAULT '',
+        transform   TEXT,
+        sort_order  INTEGER NOT NULL DEFAULT 0,
+        created_at  INTEGER NOT NULL,
+        updated_at  INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_actions_folder ON actions(folder_id, sort_order, id);
+
+    CREATE VIRTUAL TABLE IF NOT EXISTS actions_fts USING fts5(
+        title,
+        value,
+        content='actions',
+        content_rowid='id'
+    );
+    CREATE TRIGGER IF NOT EXISTS actions_ai AFTER INSERT ON actions BEGIN
+        INSERT INTO actions_fts(rowid, title, value) VALUES (new.id, new.title, new.value);
+    END;
+    CREATE TRIGGER IF NOT EXISTS actions_ad AFTER DELETE ON actions BEGIN
+        INSERT INTO actions_fts(actions_fts, rowid, title, value)
+        VALUES('delete', old.id, old.title, old.value);
+    END;
+    CREATE TRIGGER IF NOT EXISTS actions_au AFTER UPDATE ON actions BEGIN
+        INSERT INTO actions_fts(actions_fts, rowid, title, value)
+        VALUES('delete', old.id, old.title, old.value);
+        INSERT INTO actions_fts(rowid, title, value) VALUES (new.id, new.title, new.value);
+    END;
     """
 }

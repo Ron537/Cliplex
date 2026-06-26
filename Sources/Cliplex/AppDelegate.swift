@@ -12,6 +12,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var managerViewModel: ManagerViewModel?
     private var snippetsWindow: SnippetsWindowController?
     private var settingsWindow: SettingsWindowController?
+    private var actionsViewModel: ActionsViewModel?
+    private var actionsWindow: ActionsWindowController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         do {
@@ -73,8 +75,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         addItem(menu, "Open Cliplex", #selector(openClipboardPanel))
         addItem(menu, "Open Snippets", #selector(openSnippetsPanel))
+        addItem(menu, "Open Actions", #selector(openActionsPanel))
         menu.addItem(.separator())
         addItem(menu, "Snippets…", #selector(openSnippets))
+        addItem(menu, "Actions…", #selector(openActions))
         addItem(menu, "Settings…", #selector(openSettings), key: ",")
         menu.addItem(.separator())
         addItem(menu, "Quit Cliplex", #selector(quit), key: "q")
@@ -95,6 +99,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         KeyboardShortcuts.onKeyUp(for: .openSnippets) { [weak self] in
             MainActor.assumeIsolated { self?.panel.toggleAtCursor(mode: .snippets) }
         }
+        KeyboardShortcuts.onKeyUp(for: .openActions) { [weak self] in
+            MainActor.assumeIsolated { self?.panel.toggleAtCursor(mode: .actions) }
+        }
     }
 
     @objc private func openClipboardPanel() {
@@ -105,11 +112,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.toggleAtCursor(mode: .snippets)
     }
 
+    @objc private func openActionsPanel() {
+        panel.toggleAtCursor(mode: .actions)
+    }
+
     @objc private func openSnippets() {
         if snippetsWindow == nil {
             snippetsWindow = SnippetsWindowController(viewModel: sharedManagerViewModel())
         }
         snippetsWindow?.show()
+    }
+
+    @objc private func openActions() {
+        if actionsWindow == nil {
+            let viewModel = ActionsViewModel(services: services)
+            actionsViewModel = viewModel
+            actionsWindow = ActionsWindowController(viewModel: viewModel)
+        }
+        actionsWindow?.show()
     }
 
     @objc private func openSettings() {
