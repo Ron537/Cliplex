@@ -296,6 +296,11 @@ final class AppServices {
     /// `~/Library/Application Support/com.rborysowski.cliplex/cliplex.db`,
     /// matching the prior build so existing history/snippets are reused.
     private static func databasePath() -> String {
+        // General-purpose override used by the test suite and the screenshot
+        // tooling (tools/screenshots/) to point Cliplex at a throwaway database.
+        if let override = ProcessInfo.processInfo.environment["CLIPLEX_DB_PATH"], !override.isEmpty {
+            return override
+        }
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         let dir = base.appendingPathComponent("com.rborysowski.cliplex", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)

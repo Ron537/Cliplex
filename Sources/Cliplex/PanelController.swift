@@ -25,6 +25,11 @@ final class PanelController: NSObject, NSWindowDelegate {
 
     static let size = NSSize(width: 380, height: 460)
 
+    #if CLIPLEX_SCREENSHOTS
+    /// Screenshot-tooling accessor (compiled only under `-D CLIPLEX_SCREENSHOTS`).
+    var debugContentView: NSView? { panel?.contentView }
+    #endif
+
     init(viewModel: PanelViewModel) {
         self.viewModel = viewModel
         super.init()

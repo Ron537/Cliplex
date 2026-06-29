@@ -1,6 +1,7 @@
 # SwiftPM
 .build/
 build/
+dist/
 
 # Xcode (if ever opened)
 *.xcodeproj

@@ -39,7 +39,43 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NotificationCenter.default.addObserver(
             self, selector: #selector(applyAppearance),
             name: .cliplexSettingsChanged, object: nil)
+
+        #if CLIPLEX_SCREENSHOTS
+        if let target = ScreenshotMode.requestedTarget {
+            runScreenshotMode(target)
+        }
+        #endif
     }
+
+    #if CLIPLEX_SCREENSHOTS
+    /// Screenshot-tooling entry point. Compiled ONLY when the executable is built
+    /// with `-D CLIPLEX_SCREENSHOTS` (see `tools/screenshots/`); never present in
+    /// release or distributed builds. Opens the requested window, renders it to a
+    /// PNG, and quits. See `ScreenshotMode` for the reusable rendering primitive.
+    private func runScreenshotMode(_ target: String) {
+        NSApp.appearance = NSAppearance(named: .darkAqua)
+        var explicitView: NSView?
+        var window: NSWindow?
+        switch target {
+        case "settings":
+            openSettings()
+            window = settingsWindow?.window
+        case "panel":
+            panel.present(mode: .clipboard, focusFolder: nil)
+            explicitView = panel.debugContentView
+        default:
+            window = showLibrary().window
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            window?.appearance = NSAppearance(named: .darkAqua)
+            let view = explicitView ?? window?.contentView
+                ?? NSApp.windows.first { $0.isVisible && $0.contentView != nil }?.contentView
+            if let view { ScreenshotMode.write(view, named: target) }
+            NSApp.terminate(nil)
+        }
+    }
+    #endif
 
     /// Installs a minimal main menu. As a menu-bar agent the bar isn't shown,
     /// but the Edit menu's key equivalents are what make Cut/Copy/Paste/Undo/

@@ -11,7 +11,10 @@
 set -euo pipefail
 
 CONFIG="${CONFIG:-release}"
-CERT_NAME="Cliplex Dev (self-signed)"
+# Code-signing identity. Defaults to the stable self-signed dev cert (which keeps
+# the Accessibility grant across rebuilds). Release packaging overrides this with
+# a Developer ID identity via SIGN_IDENTITY.
+CERT_NAME="${SIGN_IDENTITY:-Cliplex Dev (self-signed)}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$HERE"
 
@@ -26,7 +29,13 @@ BIN_DIR="$APP/Contents/MacOS"
 RES_DIR="$APP/Contents/Resources"
 
 echo "==> swift build ($CONFIG)"
-swift build -c "$CONFIG"
+# Opt-in screenshot tooling (tools/screenshots/). Off for release/CI/distribution.
+BUILD_ARGS=()
+if [ -n "${CLIPLEX_SCREENSHOTS:-}" ]; then
+  echo "    (screenshot tooling enabled: -DCLIPLEX_SCREENSHOTS)"
+  BUILD_ARGS+=(-Xswiftc -DCLIPLEX_SCREENSHOTS)
+fi
+swift build -c "$CONFIG" ${BUILD_ARGS[@]+"${BUILD_ARGS[@]}"}
 BIN_PATH="$(swift build -c "$CONFIG" --show-bin-path)/Cliplex"
 
 echo "==> assembling $APP"
@@ -35,22 +44,26 @@ mkdir -p "$BIN_DIR" "$RES_DIR"
 cp "$BIN_PATH" "$BIN_DIR/Cliplex"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 
-# Bundle the UI fonts (auto-registered via Info.plist ATSApplicationFontsPath).
+# Bundle the UI fonts (auto-registered via Info.plist ATSApplicationFontsPath)
+# together with their OFL license texts (the SIL OFL requires the license to
+# travel with the fonts on redistribution).
 if [ -d Resources/Fonts ]; then
   mkdir -p "$RES_DIR/Fonts"
   cp Resources/Fonts/*.ttf "$RES_DIR/Fonts/"
+  [ -d Resources/Fonts/licenses ] && cp -R Resources/Fonts/licenses "$RES_DIR/Fonts/"
 fi
 
 echo "==> signing as '$CERT_NAME'"
-if ! security find-certificate -c "$CERT_NAME" >/dev/null 2>&1; then
+# Only auto-create the self-signed cert when no explicit identity was given.
+if [ -z "${SIGN_IDENTITY:-}" ] && ! security find-certificate -c "$CERT_NAME" >/dev/null 2>&1; then
   echo "    dev certificate not found — creating it"
   "$HERE/scripts/make-dev-cert.sh"
 fi
-codesign --force --options runtime \
-  --sign "$CERT_NAME" \
-  --identifier "com.rborysowski.cliplex" \
-  --entitlements Resources/Cliplex.entitlements \
-  "$APP"
+SIGN_ARGS=(--force --options runtime --identifier "com.rborysowski.cliplex"
+  --entitlements Resources/Cliplex.entitlements --sign "$CERT_NAME")
+# A secure timestamp is required for notarization; skip it for offline dev builds.
+if [ -n "${SIGN_IDENTITY:-}" ]; then SIGN_ARGS+=(--timestamp); fi
+codesign "${SIGN_ARGS[@]}" "$APP"
 
 codesign -dvvv "$APP" 2>&1 | grep -E "Identifier|Authority" | sed 's/^/  /'
 echo "==> built $APP"

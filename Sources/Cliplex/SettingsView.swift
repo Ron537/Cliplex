@@ -23,6 +23,11 @@ struct SettingsView: View {
         }
     }
 
+    /// The app's marketing version, read from the bundle so it never drifts.
+    static var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0"
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             brandBar
@@ -64,7 +69,7 @@ struct SettingsView: View {
                 navItem(cat)
             }
             Spacer()
-            Text("Cliplex 1.0 · No telemetry")
+            Text("Cliplex \(Self.appVersion) · No telemetry")
                 .font(.ui(11)).foregroundStyle(Theme.mutedText)
                 .padding(.horizontal, 10).padding(.bottom, 4)
         }

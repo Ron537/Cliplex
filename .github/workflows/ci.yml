@@ -10,7 +10,7 @@ jobs:
     name: Build & test (macOS)
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # Swift Testing (`import Testing`) requires the Xcode 16+ toolchain.
       - uses: maxim-lobanov/setup-xcode@v1

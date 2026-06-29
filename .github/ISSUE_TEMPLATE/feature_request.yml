@@ -1,0 +1,36 @@
+name: Feature request
+description: Suggest an idea or improvement for Cliplex
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the use case or pain point. "I'm always trying to…"
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What would you like Cliplex to do?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches, or how other tools handle this.
+    validations:
+      required: false
+  - type: checkboxes
+    id: principles
+    attributes:
+      label: Fits Cliplex's principles
+      description: Cliplex is local-only, fast, and native.
+      options:
+        - label: This does not require network access or telemetry
+          required: false
+        - label: This keeps the app lightweight and fast
+          required: false

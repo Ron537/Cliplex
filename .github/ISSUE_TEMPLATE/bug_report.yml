@@ -1,0 +1,50 @@
+name: Bug report
+description: Something isn't working the way it should
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug! Please fill in as much as you can.
+        **Do not report security vulnerabilities here** — see [SECURITY.md](../blob/main/SECURITY.md).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected instead.
+      placeholder: When I press ⌘⇧V, …
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the panel
+        2. Type in the search box
+        3. …
+    validations:
+      required: true
+  - type: input
+    id: cliplex-version
+    attributes:
+      label: Cliplex version
+      description: Menu-bar icon → About, or the release/commit you built from.
+      placeholder: v0.1.0 (or commit sha)
+    validations:
+      required: true
+  - type: input
+    id: macos-version
+    attributes:
+      label: macOS version
+      placeholder: "macOS 15.1 (Apple Silicon)"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / screenshots
+      description: Console output, a screen recording, or screenshots if relevant.
+    validations:
+      required: false
