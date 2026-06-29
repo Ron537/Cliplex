@@ -13,7 +13,7 @@ struct PanelView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            searchBar
+            header
             Divider().overlay(Theme.hairline)
             list
             if viewModel.needsAccessibility {
@@ -24,7 +24,14 @@ struct PanelView: View {
             footer
         }
         .frame(width: Self.width, height: Self.height)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+        .background {
+            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                .fill(LinearGradient(colors: [Theme.bgTop, Theme.bgBottom], startPoint: .topLeading, endPoint: .bottomTrailing))
+                .overlay(alignment: .topTrailing) {
+                    RadialGradient(colors: [Theme.accent.opacity(0.10), .clear], center: .topTrailing, startRadius: 0, endRadius: 360)
+                        .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+                }
+        }
         .overlay(
             RoundedRectangle(cornerRadius: 13, style: .continuous)
                 .strokeBorder(Theme.hairline, lineWidth: 0.5)
@@ -35,46 +42,49 @@ struct PanelView: View {
         .onChange(of: viewModel.showToken) { searchFocused = true }
     }
 
-    // MARK: - Search bar
+    // MARK: - Header (search + mode pills)
 
-    private var searchBar: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(Theme.accent)
-            TextField(
-                viewModel.searchPlaceholder,
-                text: $viewModel.query
-            )
-            .textFieldStyle(.plain)
-            .font(.system(size: 13))
-            .focused($searchFocused)
-            .onChange(of: viewModel.query) { viewModel.selection = 0 }
-
+    private var header: some View {
+        VStack(spacing: 11) {
+            HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass")
+                    .font(.ui(16, .medium))
+                    .foregroundStyle(Theme.mutedText)
+                TextField(viewModel.searchPlaceholder, text: $viewModel.query)
+                    .textFieldStyle(.plain)
+                    .font(.ui(16))
+                    .focused($searchFocused)
+                    .onChange(of: viewModel.query) { viewModel.selection = 0 }
+            }
             segmentedToggle
         }
-        .padding(.horizontal, 11)
-        .padding(.vertical, 9)
+        .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 11)
     }
 
     private var segmentedToggle: some View {
-        HStack(spacing: 1) {
+        HStack(spacing: 6) {
             ForEach(PanelMode.allCases, id: \.self) { mode in
                 let isOn = viewModel.mode == mode
-                Text(mode.label)
-                    .font(.system(size: 10.5, weight: .semibold))
-                    .lineLimit(1)
-                    .fixedSize()
-                    .foregroundStyle(isOn ? Theme.accentInk : Theme.secondaryText)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(isOn ? Theme.accent : .clear, in: RoundedRectangle(cornerRadius: 5))
-                    .contentShape(Rectangle())
-                    .onTapGesture { viewModel.switchMode(to: mode) }
+                HStack(spacing: 5) {
+                    if let dot = modeDot(mode) { Circle().fill(isOn ? Theme.accentInk : dot).frame(width: 6, height: 6) }
+                    Text(mode.label).font(.ui(11.5, .semibold)).lineLimit(1).fixedSize()
+                }
+                .foregroundStyle(isOn ? Theme.accentInk : Theme.secondaryText)
+                .padding(.horizontal, 11).padding(.vertical, 4)
+                .background(isOn ? Theme.accent : Theme.fieldBackground, in: Capsule())
+                .contentShape(Capsule())
+                .onTapGesture { viewModel.switchMode(to: mode) }
             }
+            Spacer()
         }
-        .padding(2)
-        .background(Theme.fieldBackground, in: RoundedRectangle(cornerRadius: 7))
+    }
+
+    private func modeDot(_ mode: PanelMode) -> Color? {
+        switch mode {
+        case .clipboard: return nil
+        case .snippets: return Theme.snippetAccent
+        case .actions: return Theme.actionAccent
+        }
     }
 
     // MARK: - List
@@ -108,7 +118,7 @@ struct PanelView: View {
 
     private var emptyState: some View {
         Text(viewModel.query.isEmpty ? emptyMessage : "No matches")
-            .font(.system(size: 13))
+            .font(.ui(13))
             .foregroundStyle(Theme.mutedText)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -138,7 +148,8 @@ struct PanelView: View {
                 row: row,
                 quickIndex: quickIndex,
                 selected: viewModel.isRowSelected(flatIndex),
-                indented: viewModel.showsFolderTree && viewModel.query.isEmpty
+                indented: viewModel.showsFolderTree && viewModel.query.isEmpty,
+                compact: viewModel.compact
             )
             .onContinuousHover(coordinateSpace: .global) { phase in
                 if case let .active(location) = phase {
@@ -154,11 +165,11 @@ struct PanelView: View {
     private var accessibilityBanner: some View {
         HStack(spacing: 8) {
             Text("Enable auto-paste → grant Accessibility")
-                .font(.system(size: 11))
+                .font(.ui(11))
                 .foregroundStyle(Theme.filesTag)
             Spacer()
             Text("Grant…")
-                .font(.system(size: 10.5, weight: .medium))
+                .font(.ui(10.5, .medium))
                 .foregroundStyle(Theme.accentInk)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
@@ -176,12 +187,12 @@ struct PanelView: View {
         HStack(spacing: 10) {
             SettingsButton { viewModel.openSettings() }
             Text(viewModel.statusText)
-                .font(.system(size: 10, design: .monospaced))
+                .font(.mono(10))
                 .foregroundStyle(Theme.mutedText)
             Spacer()
             if let toast = viewModel.toast {
                 Text(toast)
-                    .font(.system(size: 10.5, weight: .semibold))
+                    .font(.ui(10.5, .semibold))
                     .foregroundStyle(Theme.accent)
             } else {
                 hints
@@ -211,7 +222,7 @@ struct PanelView: View {
 
 private extension Text {
     func hintLabel() -> some View {
-        self.font(.system(size: 10.5)).foregroundStyle(Theme.mutedText)
+        self.font(.ui(10.5)).foregroundStyle(Theme.mutedText)
     }
 }
 
@@ -220,7 +231,7 @@ private struct HintKey: View {
     init(_ label: String) { self.label = label }
     var body: some View {
         Text(label)
-            .font(.system(size: 9.5, design: .monospaced))
+            .font(.mono(9.5))
             .foregroundStyle(Theme.secondaryText)
             .padding(.horizontal, 4)
             .padding(.vertical, 1)
@@ -236,7 +247,7 @@ private struct SettingsButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: "gearshape")
-                .font(.system(size: 11.5, weight: .medium))
+                .font(.ui(11.5, .medium))
                 .foregroundStyle(hovering ? Theme.secondaryText : Theme.mutedText)
                 .contentShape(Rectangle())
         }

@@ -26,6 +26,7 @@ public struct DisplayRow: Identifiable, Equatable {
     public let kind: Kind
     public let id: Int64
     public let title: String
+    public let subtitle: String
     public let pinned: Bool
     public let updatedAt: Int64
     public let folderID: Int64?
@@ -63,6 +64,7 @@ public struct DisplayRow: Identifiable, Equatable {
         self.kind = .clip(clip.kind)
         self.id = clip.id
         self.title = clip.preview
+        self.subtitle = clip.sourceApp ?? ""
         self.pinned = clip.pinned
         self.updatedAt = clip.updatedAt
         self.folderID = nil
@@ -72,6 +74,7 @@ public struct DisplayRow: Identifiable, Equatable {
         self.kind = .snippet
         self.id = snippet.id
         self.title = snippet.title.isEmpty ? snippet.content : snippet.title
+        self.subtitle = snippet.content.replacingOccurrences(of: "\n", with: " ")
         self.pinned = false
         self.updatedAt = snippet.updatedAt
         self.folderID = snippet.folderId
@@ -81,6 +84,10 @@ public struct DisplayRow: Identifiable, Equatable {
         self.kind = .action(action.type)
         self.id = action.id
         self.title = action.title
+        switch action.type {
+        case .transform: self.subtitle = "⤳ " + (action.transform?.label ?? "Transform")
+        default: self.subtitle = action.value.isEmpty ? action.type.label : action.value
+        }
         self.pinned = false
         self.updatedAt = action.updatedAt
         self.folderID = action.folderId

@@ -43,16 +43,16 @@ struct ConfirmDialog: View {
             ZStack {
                 Circle().fill(danger.opacity(0.14)).frame(width: 38, height: 38)
                 Image(systemName: "trash")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.ui(15, .semibold))
                     .foregroundStyle(danger)
             }
             VStack(spacing: 5) {
                 Text(title)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.display(16, .bold))
                     .foregroundStyle(Theme.primaryText)
                     .multilineTextAlignment(.center)
                 Text(message)
-                    .font(.system(size: 12))
+                    .font(.ui(12))
                     .foregroundStyle(Theme.secondaryText)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
@@ -87,16 +87,16 @@ struct InputDialog: View {
             ZStack {
                 Circle().fill(Theme.accent.opacity(0.14)).frame(width: 38, height: 38)
                 Image(systemName: icon)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.ui(14, .semibold))
                     .foregroundStyle(Theme.accent)
             }
             Text(title)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.display(16, .bold))
                 .foregroundStyle(Theme.primaryText)
 
             TextField(placeholder, text: $text)
                 .textFieldStyle(.plain)
-                .font(.system(size: 13))
+                .font(.ui(13))
                 .padding(.horizontal, 10).padding(.vertical, 8)
                 .background(Theme.fieldBackground, in: RoundedRectangle(cornerRadius: 8))
                 .overlay(
@@ -133,7 +133,7 @@ struct DialogButton: View {
     var body: some View {
         Button(action: { if enabled { action() } }) {
             Text(title)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.ui(12, .semibold))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 7)
                 .foregroundStyle(foreground)
@@ -183,7 +183,7 @@ struct HoverIconButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.system(size: 11))
+                .font(.ui(11))
                 .foregroundStyle(hovering ? Theme.primaryText : Theme.mutedText)
         }
         .buttonStyle(.plain)

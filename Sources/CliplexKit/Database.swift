@@ -365,6 +365,17 @@ public final class ClipStore {
         }
     }
 
+    /// Number of snippets in a folder (or all when `folderID` is nil), counted
+    /// in SQL without materializing rows.
+    public func countSnippets(folderID: Int64?) throws -> Int {
+        try dbQueue.read { db in
+            if let folderID {
+                return try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM snippets WHERE folder_id IS ?", arguments: [folderID]) ?? 0
+            }
+            return try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM snippets") ?? 0
+        }
+    }
+
     /// Updates a snippet's title and content.
     public func updateSnippet(id: Int64, title: String, content: String) throws {
         try dbQueue.write { db in
@@ -379,6 +390,16 @@ public final class ClipStore {
     public func deleteSnippet(id: Int64) throws {
         try dbQueue.write { db in
             try db.execute(sql: "DELETE FROM snippets WHERE id = ?", arguments: [id])
+            if db.changesCount == 0 { throw StoreError.notFound }
+        }
+    }
+
+    /// Moves a snippet to another folder (or to "uncategorized" when nil).
+    public func setSnippetFolder(id: Int64, folderID: Int64?) throws {
+        try dbQueue.write { db in
+            try db.execute(
+                sql: "UPDATE snippets SET folder_id = ?, updated_at = ? WHERE id = ?",
+                arguments: [folderID, nowMillis(), id])
             if db.changesCount == 0 { throw StoreError.notFound }
         }
     }
@@ -537,6 +558,17 @@ public final class ClipStore {
         }
     }
 
+    /// Number of actions in a folder (or all when `folderID` is nil), counted in
+    /// SQL without materializing rows.
+    public func countActions(folderID: Int64?) throws -> Int {
+        try dbQueue.read { db in
+            if let folderID {
+                return try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM actions WHERE folder_id IS ?", arguments: [folderID]) ?? 0
+            }
+            return try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM actions") ?? 0
+        }
+    }
+
     /// Updates an action's fields.
     public func updateAction(
         id: Int64, title: String, type: ActionType, value: String, transform: ActionTransform?
@@ -553,6 +585,16 @@ public final class ClipStore {
     public func deleteAction(id: Int64) throws {
         try dbQueue.write { db in
             try db.execute(sql: "DELETE FROM actions WHERE id = ?", arguments: [id])
+            if db.changesCount == 0 { throw StoreError.notFound }
+        }
+    }
+
+    /// Moves an action to another folder (or to "uncategorized" when nil).
+    public func setActionFolder(id: Int64, folderID: Int64?) throws {
+        try dbQueue.write { db in
+            try db.execute(
+                sql: "UPDATE actions SET folder_id = ?, updated_at = ? WHERE id = ?",
+                arguments: [folderID, nowMillis(), id])
             if db.changesCount == 0 { throw StoreError.notFound }
         }
     }

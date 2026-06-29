@@ -51,6 +51,17 @@ final class PanelController: NSObject, NSWindowDelegate {
         }
     }
 
+    /// Always opens the panel (no toggle) in `mode`, focused on a specific folder
+    /// — used by per-folder global shortcuts.
+    func present(mode: PanelMode, focusFolder folderID: Int64?) {
+        let panel = panel ?? makePanel()
+        viewModel.onShow(mode: mode, focusFolder: folderID)
+        positionAtCursor(panel)
+        panel.makeKeyAndOrderFront(nil)
+        installKeyMonitor()
+        DispatchQueue.main.async { [weak self] in self?.viewModel.focusSearch() }
+    }
+
     func hide() {
         removeKeyMonitor()
         panel?.orderOut(nil)

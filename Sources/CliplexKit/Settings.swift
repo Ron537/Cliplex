@@ -9,6 +9,7 @@ public enum SettingsKey {
     public static let excludedApps = "excluded_apps"
     public static let pasteOnSelect = "paste_on_select"
     public static let theme = "theme"
+    public static let compactPanel = "compact_panel"
 }
 
 /// Password managers / sensitive apps excluded by default on first run, as a
@@ -39,6 +40,8 @@ public struct AppSettings: Equatable, Sendable {
     public var excludedApps: [String]
     public var pasteOnSelect: Bool
     public var theme: Appearance
+    /// Compact panel rows: single line + smaller icon (vs. roomy two-line).
+    public var compactPanel: Bool
 
     public init(
         maxHistory: Int64 = 500,
@@ -46,7 +49,8 @@ public struct AppSettings: Equatable, Sendable {
         ignoreConcealed: Bool = true,
         excludedApps: [String] = [],
         pasteOnSelect: Bool = true,
-        theme: Appearance = .system
+        theme: Appearance = .system,
+        compactPanel: Bool = false
     ) {
         self.maxHistory = maxHistory
         self.pollIntervalMs = pollIntervalMs
@@ -54,6 +58,7 @@ public struct AppSettings: Equatable, Sendable {
         self.excludedApps = excludedApps
         self.pasteOnSelect = pasteOnSelect
         self.theme = theme
+        self.compactPanel = compactPanel
     }
 
     /// The capture filter derived from these settings.
@@ -87,6 +92,9 @@ public struct AppSettings: Equatable, Sendable {
            let appearance = Appearance(rawValue: raw) {
             settings.theme = appearance
         }
+        if let raw = try? store.setting(SettingsKey.compactPanel) {
+            settings.compactPanel = raw == "true"
+        }
         return settings
     }
 
@@ -98,6 +106,7 @@ public struct AppSettings: Equatable, Sendable {
         try store.setSetting(SettingsKey.excludedApps, excludedApps.joined(separator: "\n"))
         try store.setSetting(SettingsKey.pasteOnSelect, pasteOnSelect ? "true" : "false")
         try store.setSetting(SettingsKey.theme, theme.rawValue)
+        try store.setSetting(SettingsKey.compactPanel, compactPanel ? "true" : "false")
     }
 }
 

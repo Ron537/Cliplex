@@ -56,18 +56,31 @@ final class PanelViewModel: ObservableObject {
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in self?.reloadIfClipboard() }
             .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: .cliplexSettingsChanged)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &cancellables)
     }
 
     // MARK: - Lifecycle
 
     /// Called each time the panel is shown: resets state and reloads data.
-    func onShow(mode: PanelMode) {
+    /// `focusFolder` (a folder id) selects that folder's header when provided.
+    func onShow(mode: PanelMode, focusFolder: Int64? = nil) {
         self.mode = mode
         query = ""
         selection = 0
         needsAccessibility = !Accessibility.isTrusted
         reload()
-        selectFirstRow()
+        if let focusFolder,
+           let idx = layout.nav.firstIndex(where: {
+               if case let .header(key) = $0 { return key == focusFolder }; return false
+           }) {
+            selection = idx
+        } else {
+            selectFirstRow()
+        }
         scrollToken += 1
     }
 
@@ -172,6 +185,9 @@ final class PanelViewModel: ObservableObject {
     /// Whether the current mode renders a collapsible folder tree (snippets and
     /// actions), used for row indentation in the view.
     var showsFolderTree: Bool { mode == .snippets || mode == .actions }
+
+    /// Compact single-line rows (a setting); read live so toggling applies on reopen.
+    var compact: Bool { services.settings.compactPanel }
 
     // MARK: - Actions
 

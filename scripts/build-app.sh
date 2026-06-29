@@ -35,6 +35,12 @@ mkdir -p "$BIN_DIR" "$RES_DIR"
 cp "$BIN_PATH" "$BIN_DIR/Cliplex"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 
+# Bundle the UI fonts (auto-registered via Info.plist ATSApplicationFontsPath).
+if [ -d Resources/Fonts ]; then
+  mkdir -p "$RES_DIR/Fonts"
+  cp Resources/Fonts/*.ttf "$RES_DIR/Fonts/"
+fi
+
 echo "==> signing as '$CERT_NAME'"
 if ! security find-certificate -c "$CERT_NAME" >/dev/null 2>&1; then
   echo "    dev certificate not found — creating it"

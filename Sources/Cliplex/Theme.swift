@@ -25,6 +25,26 @@ enum Theme {
     static let imageTag = dynamic(dark: 0x5FD0E0, light: 0x0E8FA8)
     static let filesTag = dynamic(dark: 0xE6B860, light: 0xB8860B)
 
+    /// Snippets domain accent (teal) — used for the rail group dot/badges.
+    static let snippetAccent = dynamic(dark: 0x5FD0A8, light: 0x18A06B)
+    /// Actions domain accent (violet) — used for the rail group dot/badges.
+    static let actionAccent = dynamic(dark: 0xC08CFF, light: 0x8B54E0)
+
+    /// A faint elevated surface for cards/list selection (matches the mockup's
+    /// `--panel-2`), resolved per appearance.
+    static let elevated = Color(nsColor: NSColor(name: nil) { appearance in
+        appearance.isDark ? NSColor(hex: 0x1D2530) : NSColor(hex: 0xFFFFFF)
+    })
+
+    /// A subtle inset surface tint for the side rails (mockup `rgba(0,0,0,.06)`).
+    static let railBackground = Color(nsColor: NSColor(name: nil) { appearance in
+        appearance.isDark ? NSColor(white: 0, alpha: 0.16) : NSColor(white: 0, alpha: 0.018)
+    })
+
+    /// Window background gradient stops (dark blue → near-black; light grays).
+    static let bgTop = dynamic(dark: 0x12161D, light: 0xF5F7FA)
+    static let bgBottom = dynamic(dark: 0x0A0D12, light: 0xE7EAF0)
+
     private static func dynamic(dark: Int, light: Int) -> Color {
         Color(nsColor: NSColor(name: nil) { $0.isDark ? NSColor(hex: dark) : NSColor(hex: light) })
     }

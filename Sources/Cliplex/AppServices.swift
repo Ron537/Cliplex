@@ -135,10 +135,16 @@ final class AppServices {
         finishPaste(hidePanel: hidePanel)
     }
 
-    /// Writes a snippet's content to the clipboard and pastes it.
+    /// Writes a snippet's content to the clipboard and pastes it. `{clipboard}`
+    /// is expanded with the current clipboard text so snippets can wrap whatever
+    /// you copied last.
     func pasteSnippet(id: Int64, hidePanel: @escaping () -> Void) {
         guard let snippet = try? store.snippet(id: id) else { return }
-        guard clipboard.write([ClipAsset(uti: UTI.text, bytes: Data(snippet.content.utf8))]) else {
+        var content = snippet.content
+        if content.contains("{clipboard}") {
+            content = content.replacingOccurrences(of: "{clipboard}", with: currentClipboardText() ?? "")
+        }
+        guard clipboard.write([ClipAsset(uti: UTI.text, bytes: Data(content.utf8))]) else {
             hidePanel()
             return
         }
@@ -257,8 +263,13 @@ final class AppServices {
 
     // MARK: - Settings
 
-    func updateSettings(_ new: AppSettings) {
-        try? new.save(to: store)
+    /// Removes all unpinned clipboard history (pinned clips are kept).
+    func clearHistory() {
+        _ = try? store.pruneClips(maxItems: 0)
+        NotificationCenter.default.post(name: .cliplexHistoryChanged, object: nil)
+    }
+
+    func updateSettings(_ new: AppSettings) {        try? new.save(to: store)
         settings = AppSettings.load(from: store)
         // Enforce a lowered history cap immediately rather than waiting for the
         // next captured clip.

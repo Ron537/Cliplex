@@ -21,6 +21,9 @@
     <!-- Menu-bar agent: no Dock icon, no main window. -->
     <key>LSUIElement</key>
     <true/>
+    <!-- Auto-register bundled fonts (Contents/Resources/Fonts) at launch. -->
+    <key>ATSApplicationFontsPath</key>
+    <string>Fonts</string>
     <key>NSHumanReadableCopyright</key>
     <string>Cliplex</string>
     <key>NSPrincipalClass</key>

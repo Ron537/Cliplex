@@ -80,6 +80,12 @@ final class ManagerViewModel: ObservableObject {
 
     // MARK: - Snippets
 
+    /// Total snippets across all folders (for the Library toolbar count).
+    var totalSnippetCount: Int { (try? services.store.countSnippets(folderID: nil)) ?? 0 }
+
+    /// Number of snippets in a specific folder (for the rail row count).
+    func count(inFolder id: Int64) -> Int { (try? services.store.countSnippets(folderID: id)) ?? 0 }
+
     func loadFolders() {
         folders = (try? services.store.listFolders()) ?? []
     }
@@ -217,14 +223,19 @@ final class ManagerViewModel: ObservableObject {
     /// Asks for confirmation before deleting a folder (the hovered one).
     func requestDeleteFolder(_ folder: SnippetFolder) {
         folderPendingDelete = folder
-        folderPendingDeleteCount = (try? services.store.listSnippets(folderID: folder.id).count) ?? 0
+        folderPendingDeleteCount = (try? services.store.countSnippets(folderID: folder.id)) ?? 0
         confirmingFolderDelete = true
     }
 
     func confirmDeleteFolder() {
         confirmingFolderDelete = false
         guard let folder = folderPendingDelete else { return }
+        // Release the folder's global shortcut and those of the snippets it
+        // cascade-deletes, so no orphaned hotkeys linger.
+        let childIDs = (try? services.store.listSnippets(folderID: folder.id))?.map(\.id) ?? []
         try? services.store.deleteFolder(id: folder.id)
+        ShortcutCenter.shared.reset(.snippetFolder, folder.id)
+        childIDs.forEach { ShortcutCenter.shared.reset(.snippet, $0) }
         folderPendingDelete = nil
         loadFolders()
         // The open snippet may have lived in this folder (cascade-deleted) — clear
@@ -287,6 +298,35 @@ final class ManagerViewModel: ObservableObject {
         clearEditor()
     }
 
+    /// The folder of the snippet currently open in the editor (nil for drafts /
+    /// uncategorized). Used by the inspector's Folder picker.
+    var editingSnippetFolderID: Int64? { editingSnippet?.folderId }
+
+    /// Moves the open (saved) snippet to another folder.
+    func moveEditingSnippet(to folderID: Int64?) {
+        guard let snippet = editingSnippet, snippet.folderId != folderID else { return }
+        try? services.store.setSnippetFolder(id: snippet.id, folderID: folderID)
+        if let updated = try? services.store.snippet(id: snippet.id) { editingSnippet = updated }
+        loadSnippets()
+    }
+
+    /// Duplicates the open (saved) snippet and opens the copy.
+    func duplicateEditingSnippet() {
+        commitPendingEdits()
+        guard let snippet = editingSnippet else { return }
+        guard let copy = try? services.store.addSnippet(
+            folderID: snippet.folderId, title: snippet.title + " copy", content: snippet.content) else { return }
+        loadSnippets()
+        ShortcutCenter.shared.ensureHandler(.snippet, copy.id)
+        openSnippet(copy)
+    }
+
+    /// Deletes the snippet currently open in the editor (by id, so it works even
+    /// after the item was moved out of the visible folder).
+    func requestDeleteEditingSnippet() {
+        if let snippet = editingSnippet { requestDeleteSnippet(snippet) }
+    }
+
     /// Asks for confirmation before deleting a saved snippet (the hovered one).
     func requestDeleteSnippet(_ snippet: Snippet) {
         snippetPendingDelete = snippet
@@ -297,6 +337,7 @@ final class ManagerViewModel: ObservableObject {
         confirmingSnippetDelete = false
         guard let snippet = snippetPendingDelete else { return }
         try? services.store.deleteSnippet(id: snippet.id)
+        ShortcutCenter.shared.reset(.snippet, snippet.id)
         snippetPendingDelete = nil
         if selectedSnippetID == snippet.id { clearEditor() }
         loadSnippets()
@@ -356,5 +397,10 @@ final class ManagerViewModel: ObservableObject {
         LoginItem.set(autostartEnabled)
         let actual = LoginItem.isEnabled
         if actual != autostartEnabled { autostartEnabled = actual }
+    }
+
+    /// Clears all unpinned clipboard history.
+    func clearHistory() {
+        services.clearHistory()
     }
 }

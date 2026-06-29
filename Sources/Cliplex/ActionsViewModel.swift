@@ -82,6 +82,12 @@ final class ActionsViewModel: ObservableObject {
 
     // MARK: - Loading
 
+    /// Total actions across all folders (for the Library toolbar count).
+    var totalActionCount: Int { (try? services.store.countActions(folderID: nil)) ?? 0 }
+
+    /// Number of actions in a specific folder (for the rail row count).
+    func count(inFolder id: Int64) -> Int { (try? services.store.countActions(folderID: id)) ?? 0 }
+
     func loadFolders() {
         folders = (try? services.store.listActionFolders()) ?? []
     }
@@ -166,6 +172,36 @@ final class ActionsViewModel: ObservableObject {
         clearEditor()
     }
 
+    /// The folder of the action currently open in the editor. Used by the
+    /// inspector's Folder picker.
+    var editingActionFolderID: Int64? { editingAction?.folderId }
+
+    /// Moves the open (saved) action to another folder.
+    func moveEditingAction(to folderID: Int64?) {
+        guard let action = editingAction, action.folderId != folderID else { return }
+        try? services.store.setActionFolder(id: action.id, folderID: folderID)
+        if let updated = try? services.store.action(id: action.id) { editingAction = updated }
+        loadActions()
+    }
+
+    /// Duplicates the open (saved) action and opens the copy.
+    func duplicateEditingAction() {
+        commitPendingEdits()
+        guard let action = editingAction else { return }
+        guard let copy = try? services.store.addAction(
+            folderID: action.folderId, title: action.title + " copy", type: action.type,
+            value: action.value, transform: action.transform) else { return }
+        loadActions()
+        ShortcutCenter.shared.ensureHandler(.action, copy.id)
+        openAction(copy)
+    }
+
+    /// Deletes the action currently open in the editor (by id, so it works even
+    /// after the item was moved out of the visible folder).
+    func requestDeleteEditingAction() {
+        if let action = editingAction { requestDeleteAction(action) }
+    }
+
     /// Whether the current draft has enough to be worth persisting. A transform
     /// is fully specified by its type, but still needs a name so an abandoned
     /// "switch type → click away" doesn't leave an "Untitled" transform behind;
@@ -240,14 +276,17 @@ final class ActionsViewModel: ObservableObject {
 
     func requestDeleteFolder(_ folder: ActionFolder) {
         folderPendingDelete = folder
-        folderPendingDeleteCount = (try? services.store.listActions(folderID: folder.id))?.count ?? 0
+        folderPendingDeleteCount = (try? services.store.countActions(folderID: folder.id)) ?? 0
         confirmingFolderDelete = true
     }
 
     func confirmDeleteFolder() {
         confirmingFolderDelete = false
         guard let folder = folderPendingDelete else { return }
+        let childIDs = (try? services.store.listActions(folderID: folder.id))?.map(\.id) ?? []
         try? services.store.deleteActionFolder(id: folder.id)
+        ShortcutCenter.shared.reset(.actionFolder, folder.id)
+        childIDs.forEach { ShortcutCenter.shared.reset(.action, $0) }
         folderPendingDelete = nil
         // Clear the editor if the open action lived in this (cascade-deleted) folder.
         if editingAction?.folderId == folder.id { clearEditor() }
@@ -269,6 +308,7 @@ final class ActionsViewModel: ObservableObject {
         confirmingActionDelete = false
         guard let action = actionPendingDelete else { return }
         try? services.store.deleteAction(id: action.id)
+        ShortcutCenter.shared.reset(.action, action.id)
         actionPendingDelete = nil
         if selectedActionID == action.id { clearEditor() }
         loadActions()
