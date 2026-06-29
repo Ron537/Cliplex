@@ -1,22 +1,24 @@
 #!/usr/bin/env bash
 #
-# Build a Developer ID-signed Cliplex.app and package it as a distributable DMG.
-# Notarization + stapling are performed by the release workflow
-# (.github/workflows/release.yml); this script produces the artifacts it submits.
+# Build Cliplex.app and package it as a distributable DMG.
 #
-# Required env:
-#   SIGN_IDENTITY   e.g. "Developer ID Application: Your Name (TEAMID)"
-# Optional env:
+# By default this uses **ad-hoc signing** (free, no Apple ID): the app runs, but
+# because it isn't notarized, macOS shows a Gatekeeper prompt the first time a
+# *downloaded* build is opened (see the README "Install" section). Building from
+# source has no such prompt.
+#
+# Env:
+#   SIGN_IDENTITY   signing identity (default "-" = ad-hoc). Set to a
+#                   "Developer ID Application: …" identity for a notarizable build.
 #   VERSION         marketing version (defaults to the git tag/short sha)
 #
-# Output (in dist/):
-#   Cliplex.app, Cliplex-<version>.dmg
+# Output (in dist/): Cliplex.app, Cliplex-<version>.dmg
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$HERE"
 
-: "${SIGN_IDENTITY:?set SIGN_IDENTITY to your Developer ID Application identity}"
+SIGN_IDENTITY="${SIGN_IDENTITY:--}"
 VERSION="${VERSION:-$(git describe --tags --always 2>/dev/null || echo dev)}"
 VERSION="${VERSION#v}"
 
@@ -24,7 +26,11 @@ DIST="dist"
 APP="$DIST/Cliplex.app"
 DMG="$DIST/Cliplex-$VERSION.dmg"
 
-echo "==> building + signing Cliplex.app ($VERSION) with '$SIGN_IDENTITY'"
+if [ "$SIGN_IDENTITY" = "-" ]; then
+  echo "==> building Cliplex.app ($VERSION) with ad-hoc signing (free)"
+else
+  echo "==> building Cliplex.app ($VERSION) with '$SIGN_IDENTITY'"
+fi
 SIGN_IDENTITY="$SIGN_IDENTITY" ./scripts/build-app.sh
 
 rm -rf "$DIST"

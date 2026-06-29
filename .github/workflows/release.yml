@@ -1,8 +1,11 @@
 name: Release
 
-# Publishes a notarized Cliplex.dmg to a GitHub Release when a version tag is
-# pushed. Requires the secrets documented below (see RELEASING.md). If the
-# signing secrets are absent the job is skipped, so forks won't fail.
+# Builds an ad-hoc-signed Cliplex.dmg and publishes it to a GitHub Release when a
+# version tag is pushed. No Apple Developer account or secrets required.
+#
+# Note: ad-hoc builds are NOT notarized, so users see a one-time Gatekeeper
+# prompt on first launch of a downloaded build (see the README "Install"
+# section). To ship notarized builds later, see RELEASING.md.
 on:
   push:
     tags: ["v*"]
@@ -12,9 +15,8 @@ permissions:
 
 jobs:
   release:
-    name: Build, notarize & publish
+    name: Build & publish DMG
     runs-on: macos-15
-    # Skip on forks / when signing isn't configured.
     if: ${{ github.repository == 'Ron537/Cliplex' }}
     steps:
       - uses: actions/checkout@v5
@@ -23,47 +25,10 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - name: Import Developer ID certificate
+      - name: Build ad-hoc-signed DMG
         env:
-          CERT_P12_BASE64: ${{ secrets.DEVELOPER_ID_CERT_P12_BASE64 }}
-          CERT_PASSWORD: ${{ secrets.DEVELOPER_ID_CERT_PASSWORD }}
-          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
-        run: |
-          set -euo pipefail
-          KEYCHAIN="$RUNNER_TEMP/build.keychain-db"
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
-          echo "$CERT_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/cert.p12"
-          security import "$RUNNER_TEMP/cert.p12" -k "$KEYCHAIN" \
-            -P "$CERT_PASSWORD" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: \
-            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
-          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
-          rm -f "$RUNNER_TEMP/cert.p12"
-
-      - name: Build, sign & package DMG
-        env:
-          SIGN_IDENTITY: ${{ secrets.SIGN_IDENTITY }}
           VERSION: ${{ github.ref_name }}
         run: ./scripts/package-release.sh
-
-      - name: Notarize & staple
-        env:
-          AC_APPLE_ID: ${{ secrets.AC_APPLE_ID }}
-          AC_PASSWORD: ${{ secrets.AC_PASSWORD }}
-          AC_TEAM_ID: ${{ secrets.AC_TEAM_ID }}
-        run: |
-          set -euo pipefail
-          DMG="$(ls dist/Cliplex-*.dmg)"
-          echo "Submitting $DMG for notarization…"
-          xcrun notarytool submit "$DMG" \
-            --apple-id "$AC_APPLE_ID" \
-            --password "$AC_PASSWORD" \
-            --team-id "$AC_TEAM_ID" \
-            --wait
-          xcrun stapler staple "$DMG"
-          xcrun stapler validate "$DMG"
 
       - name: Publish GitHub Release
         env:

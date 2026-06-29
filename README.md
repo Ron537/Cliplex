@@ -71,8 +71,14 @@ telemetry.
 ## Install
 
 > [!NOTE]
-> Signed, notarized release builds are coming. Until the first release is
-> published, build from source (below).
+> Release builds are **ad-hoc signed but not notarized** (Cliplex is free and
+> doesn't carry a paid Apple Developer certificate). The app is safe and runs
+> fine — macOS just shows a one-time Gatekeeper prompt for a *downloaded* build.
+> See [first launch](#first-launch) below. Building from source has no prompt.
+
+**Download:** grab the latest `Cliplex.dmg` from the
+[Releases](https://github.com/Ron537/Cliplex/releases) page, open it, and drag
+**Cliplex** to **Applications**.
 
 **Homebrew (planned):**
 
@@ -80,9 +86,30 @@ telemetry.
 brew install --cask cliplex
 ```
 
-**Download:** grab the latest `Cliplex.app` from the
-[Releases](https://github.com/Ron537/Cliplex/releases) page, move it to
-`/Applications`, and launch it.
+**Build from source** (no Gatekeeper prompt):
+
+```bash
+git clone https://github.com/Ron537/Cliplex.git
+cd Cliplex
+./scripts/build-app.sh      # build + bundle + sign
+open build/Cliplex.app
+```
+
+### First launch
+
+Because downloaded builds aren't notarized, the first time you open Cliplex
+macOS says *"Apple could not verify Cliplex is free of malware."* To allow it:
+
+1. Open **System Settings → Privacy & Security**, scroll to **Security**, and
+   click **Open Anyway** next to the Cliplex message, then confirm.
+
+Or, from Terminal, remove the download quarantine flag:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Cliplex.app
+```
+
+You only need to do this once.
 
 **Build from source:**
 

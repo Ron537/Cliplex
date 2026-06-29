@@ -12,8 +12,9 @@ set -euo pipefail
 
 CONFIG="${CONFIG:-release}"
 # Code-signing identity. Defaults to the stable self-signed dev cert (which keeps
-# the Accessibility grant across rebuilds). Release packaging overrides this with
-# a Developer ID identity via SIGN_IDENTITY.
+# the Accessibility grant across rebuilds). Override with SIGN_IDENTITY:
+#   SIGN_IDENTITY="-"                       → ad-hoc (free; for downloadable builds)
+#   SIGN_IDENTITY="Developer ID Application: …"  → notarizable release signing
 CERT_NAME="${SIGN_IDENTITY:-Cliplex Dev (self-signed)}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$HERE"
@@ -61,8 +62,11 @@ if [ -z "${SIGN_IDENTITY:-}" ] && ! security find-certificate -c "$CERT_NAME" >/
 fi
 SIGN_ARGS=(--force --options runtime --identifier "com.rborysowski.cliplex"
   --entitlements Resources/Cliplex.entitlements --sign "$CERT_NAME")
-# A secure timestamp is required for notarization; skip it for offline dev builds.
-if [ -n "${SIGN_IDENTITY:-}" ]; then SIGN_ARGS+=(--timestamp); fi
+# A secure timestamp is only needed for notarized Developer ID builds; skip it
+# for ad-hoc ("-") and offline self-signed dev builds.
+if [ -n "${SIGN_IDENTITY:-}" ] && [ "${SIGN_IDENTITY:-}" != "-" ]; then
+  SIGN_ARGS+=(--timestamp)
+fi
 codesign "${SIGN_ARGS[@]}" "$APP"
 
 codesign -dvvv "$APP" 2>&1 | grep -E "Identifier|Authority" | sed 's/^/  /'

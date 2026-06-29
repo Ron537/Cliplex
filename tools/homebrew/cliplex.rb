@@ -23,6 +23,10 @@ cask "cliplex" do
 
   app "Cliplex.app"
 
+  # Release builds are ad-hoc signed (not notarized), so macOS quarantines the
+  # downloaded app. Users approve it once via System Settings → Privacy &
+  # Security → "Open Anyway" (see the README "First launch" section).
+
   zap trash: [
     "~/Library/Application Support/com.rborysowski.cliplex",
     "~/Library/Preferences/com.rborysowski.cliplex.plist",
