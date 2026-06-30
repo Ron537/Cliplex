@@ -1,5 +1,11 @@
 name: CodeQL
 
+# NOTE: This workflow is currently DISABLED (Actions → CodeQL → ⋯ → Disable, or
+# `gh workflow disable codeql.yml`) to avoid spending scarce macOS Actions
+# minutes while the repo is private — Swift CodeQL takes ~30-40 min per run.
+# Re-enable once the repo is public:  `gh workflow enable codeql.yml`
+# (CodeQL is also free/unlimited for public repos).
+
 on:
   push:
     branches: [main]
