@@ -16,9 +16,11 @@ permissions:
 jobs:
   analyze:
     name: Analyze (Swift)
-    # Swift analysis must run on macOS and build the package.
+    # Swift analysis must run on macOS and build the package. The CodeQL Swift
+    # extractor + query run is slow on cold macOS runners (the build alone can
+    # take ~20 min), so allow generous headroom.
     runs-on: macos-15
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - name: Checkout
         uses: actions/checkout@v5
