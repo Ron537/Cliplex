@@ -13,6 +13,13 @@ permissions:
   contents: read
   security-events: write
 
+# Swift CodeQL is slow (~30-40 min on macOS). Collapse rapid pushes / PR updates
+# on the same ref to the latest run so a burst of commits doesn't pile up a long
+# queue of macOS-minute-heavy runs.
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   analyze:
     name: Analyze (Swift)
