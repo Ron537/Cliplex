@@ -10,7 +10,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 First public release.
 
-### Added
+### Features
 
 - **Clipboard history** — text, rich text, images, files, and color swatches
   with most-recently-used ordering and pinning.

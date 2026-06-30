@@ -2,6 +2,7 @@
 .build/
 build/
 dist/
+_site/
 
 # Xcode (if ever opened)
 *.xcodeproj

@@ -9,9 +9,20 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  # Manual trigger for a dry run: builds + uploads the DMG as a workflow
+  # artifact without publishing a Release.
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Build only (no publish)"
+        required: false
+        default: "true"
 
 permissions:
   contents: write
+  # For actions/attest-build-provenance (Sigstore-signed provenance).
+  id-token: write
+  attestations: write
 
 jobs:
   release:
@@ -27,15 +38,78 @@ jobs:
 
       - name: Build ad-hoc-signed DMG
         env:
-          VERSION: ${{ github.ref_name }}
+          # On a tag this is the version (vX.Y.Z); on a manual run, "dev".
+          VERSION: ${{ github.ref_type == 'tag' && github.ref_name || 'dev' }}
         run: ./scripts/package-release.sh
 
+      - name: Compute SHA-256 checksums
+        run: |
+          cd dist
+          shasum -a 256 *.dmg | tee SHA256SUMS.txt
+
+      # Sigstore-signed build provenance — proves "this DMG was built from this
+      # commit by this workflow on GitHub-hosted runners". Free via OIDC,
+      # verifiable with `gh attestation verify`. Lets users trust the unsigned
+      # binary. Requires a public repo; continue-on-error so private repos and
+      # dry runs still succeed.
+      - name: Generate build provenance
+        if: ${{ github.ref_type == 'tag' }}
+        continue-on-error: true
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: dist/*.dmg
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cliplex-dmg
+          path: |
+            dist/*.dmg
+            dist/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Publish GitHub Release
+        if: ${{ github.ref_type == 'tag' }}
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
           DMG="$(ls dist/Cliplex-*.dmg)"
-          gh release create "${{ github.ref_name }}" "$DMG" \
-            --title "Cliplex ${{ github.ref_name }}" \
-            --generate-notes
+          SHA="$(awk '{print $1}' dist/SHA256SUMS.txt | head -1)"
+
+          # Lead with the curated CHANGELOG section for this version (literal
+          # prefix match — the heading contains [ ] which awk regex would treat
+          # as a character class).
+          VERSION="${TAG#v}"
+          HEADING="## [$VERSION]"
+          CHANGELOG_SECTION=$(awk -v heading="$HEADING" '
+            index($0, heading) == 1 { found=1; next }
+            found && /^## \[/ { exit }
+            found
+          ' CHANGELOG.md)
+
+          # Categorized "What's Changed" from merged PRs (.github/release.yml).
+          GENERATED=$(gh api -X POST "repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
+            -f tag_name="$TAG" --jq '.body' 2>/dev/null || echo "")
+
+          {
+            if [ -n "$CHANGELOG_SECTION" ]; then
+              printf '## ✨ What'\''s New\n\n%s\n\n---\n\n' "$CHANGELOG_SECTION"
+            fi
+            if [ -n "$GENERATED" ]; then
+              printf '%s\n\n---\n\n' "$GENERATED"
+            fi
+            printf '## 📦 Download\n\n'
+            printf '| Platform | Download |\n| --- | --- |\n'
+            printf '| macOS (Apple Silicon & Intel) | [Cliplex-%s.dmg](https://github.com/%s/releases/download/%s/Cliplex-%s.dmg) |\n\n' \
+              "$VERSION" "$GITHUB_REPOSITORY" "$TAG" "$VERSION"
+            printf '**SHA-256:** `%s`\n\n' "$SHA"
+            printf '> Builds are ad-hoc signed (free, not notarized). On first launch macOS may say it "could not verify" the app — approve it once via **System Settings → Privacy & Security → Open Anyway**, or run `xattr -dr com.apple.quarantine /Applications/Cliplex.app`. Verify the SHA-256 above for extra confidence.\n'
+          } > /tmp/release-body.md
+
+          gh release create "$TAG" \
+            dist/Cliplex-*.dmg dist/SHA256SUMS.txt \
+            --title "Cliplex $TAG" \
+            --notes-file /tmp/release-body.md

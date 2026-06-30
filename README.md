@@ -124,7 +124,45 @@ Open the panel with **⌘⇧V**. Auto-paste needs **Accessibility** permission
 (System Settings → Privacy & Security → Accessibility); the dev build signs with
 a stable self-signed certificate so the grant persists across rebuilds.
 
-## Stack
+### Verify the build
+
+Release builds aren't notarized, so if you want extra confidence the DMG is
+genuine, verify its checksum and build provenance:
+
+```bash
+# Compare against the SHA-256 published on the release page (SHA256SUMS.txt):
+shasum -a 256 ~/Downloads/Cliplex-0.1.0.dmg
+
+# Verify the Sigstore build attestation (proves it was built by the release
+# workflow from this repo, on GitHub-hosted runners):
+gh attestation verify ~/Downloads/Cliplex-0.1.0.dmg --repo Ron537/Cliplex
+```
+
+## FAQ / Troubleshooting
+
+**"Apple could not verify Cliplex is free of malware."**
+Expected for a free, un-notarized build. Approve it once via System Settings →
+Privacy & Security → **Open Anyway**, or run
+`xattr -dr com.apple.quarantine /Applications/Cliplex.app`. See
+[First launch](#first-launch).
+
+**The panel (⌘⇧V) opens but pasting doesn't work.**
+Auto-paste needs **Accessibility** permission. Grant it in System Settings →
+Privacy & Security → Accessibility, then toggle Cliplex off/on if it was already
+listed.
+
+**Nothing is being captured from some apps.**
+By design — clips marked concealed/transient (password managers, etc.) and apps
+in your exclusion list are never stored. See [PRIVACY.md](PRIVACY.md).
+
+**Where is my data? How do I reset it?**
+Everything lives in `~/Library/Application Support/com.rborysowski.cliplex/`.
+Quit Cliplex and delete that folder to start fresh.
+
+**Does Cliplex phone home / sync / collect analytics?**
+No. Zero network access, no telemetry, no account. Everything is local.
+
+
 
 - **Swift** (Swift Package Manager), macOS 14+
 - **AppKit** menu-bar agent + **SwiftUI** content
@@ -142,6 +180,7 @@ a stable self-signed certificate so the grant persists across rebuilds.
 | `Resources/` | `Info.plist`, entitlements, bundled fonts |
 | `scripts/` | Build/bundle/sign and test helpers |
 | `tools/screenshots/` | Reusable screenshot pipeline (generic demo data) |
+| `site/` | GitHub Pages landing page + changelog template (built by `scripts/build-site.mjs`) |
 
 ## Build & run
 

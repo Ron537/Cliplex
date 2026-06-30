@@ -1,0 +1,43 @@
+# Categorize the release notes GitHub generates from merged PRs. Used by
+# `gh release create --generate-notes` and the release workflow. Group titles
+# match the sections used in CHANGELOG.md so the vocabulary stays consistent.
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+      - dependencies
+      - skip-changelog
+    authors:
+      - dependabot
+      - github-actions
+  categories:
+    - title: ⭐ Features
+      labels:
+        - feature
+        - enhancement
+        - feat
+    - title: 🐛 Bug Fixes
+      labels:
+        - bug
+        - bugfix
+        - fix
+    - title: ⚡ Performance
+      labels:
+        - performance
+        - perf
+    - title: 🔧 Improvements
+      labels:
+        - improvement
+        - refactor
+        - chore
+    - title: 📚 Documentation
+      labels:
+        - documentation
+        - docs
+    - title: 🧪 Testing & CI
+      labels:
+        - test
+        - ci
+    - title: Other changes
+      labels:
+        - "*"

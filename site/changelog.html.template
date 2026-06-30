@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Changelog — Cliplex</title>
+<meta name="description" content="Release history and changelog for Cliplex, the native macOS clipboard manager." />
+<link rel="icon" href="../assets/icon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="brand" href="../"><img src="../assets/icon.svg" alt="" /> Cliplex</a>
+    <div class="nav-links">
+      <a href="../#features">Features</a>
+      <a href="../#compare">Compare</a>
+      <a href="../#install">Install</a>
+      <a href="./">Changelog</a>
+      <a href="https://github.com/Ron537/Cliplex">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<main class="changelog">
+  <div class="wrap" style="max-width:760px">
+    <div class="section-head" style="margin-bottom:24px">
+      <h2>Changelog</h2>
+      <p>Every release of Cliplex, newest first.</p>
+    </div>
+    {{CHANGELOG}}
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="brand"><img src="../assets/icon.svg" alt="" /> Cliplex</div>
+    <div class="footer-links">
+      <a href="https://github.com/Ron537/Cliplex">GitHub</a>
+      <a href="https://github.com/Ron537/Cliplex/blob/main/CHANGELOG.md">CHANGELOG.md</a>
+      <a href="https://github.com/Ron537/Cliplex/blob/main/LICENSE">MIT License</a>
+    </div>
+    <div>© {{YEAR}} · No telemetry</div>
+  </div>
+</footer>
+
+</body>
+</html>

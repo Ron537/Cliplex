@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cliplex — a fast, private clipboard manager for macOS</title>
+<meta name="description" content="Cliplex is a lightweight, native macOS clipboard manager — clipboard history, snippets, and quick actions, with instant full-text search. No telemetry, no cloud, free and open source." />
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+<meta property="og:title" content="Cliplex — a fast, private clipboard manager for macOS" />
+<meta property="og:description" content="Clipboard history, snippets, and quick actions with instant search. Native, private, free." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://ron537.github.io/Cliplex/" />
+<meta name="theme-color" content="#0a1322" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="brand" href="./"><img src="assets/icon.svg" alt="" /> Cliplex</a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#compare">Compare</a>
+      <a href="#install">Install</a>
+      <a href="changelog/">Changelog</a>
+      <a href="https://github.com/Ron537/Cliplex">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow">● Native · Private · Free &amp; open source</span>
+      <h1>Your clipboard, instantly searchable.</h1>
+      <p class="lede">A fast, native macOS menu-bar app for clipboard history, snippets, and quick actions — with as-you-type full-text search. No telemetry, no cloud, nothing leaves your machine.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="https://github.com/Ron537/Cliplex/releases/latest">↓ Download for macOS</a>
+        <a class="btn" href="https://github.com/Ron537/Cliplex">★ Star on GitHub</a>
+      </div>
+      <p class="hero-note">macOS 14+ · Apple Silicon &amp; Intel · Open the panel with ⌘⇧V</p>
+    </div>
+    <div class="hero-shot">
+      <img src="assets/screenshots/panel.png" alt="Cliplex quick panel opening at the cursor" />
+    </div>
+  </div>
+</header>
+
+<section class="block" id="features">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Everything you copy, organized</h2>
+      <p>Most clipboard apps make you choose between history and snippets. Cliplex does both — plus quick actions — and makes all of it searchable.</p>
+    </div>
+    <div class="features">
+      <div class="card">
+        <div class="dot" style="background:rgba(77,155,255,.14);color:#4d9bff">⧉</div>
+        <h3>Clipboard history</h3>
+        <p>Text, rich text, images, files, and color swatches, with most-recently-used ordering and pinning.</p>
+      </div>
+      <div class="card">
+        <div class="dot" style="background:rgba(95,208,168,.14);color:#5fd0a8">⌘</div>
+        <h3>Snippets in folders</h3>
+        <p>Reusable text organized into a collapsible tree. Weave in your last clipboard with <code>{clipboard}</code>.</p>
+      </div>
+      <div class="card">
+        <div class="dot" style="background:rgba(192,140,255,.14);color:#c08cff">⚡</div>
+        <h3>Quick actions</h3>
+        <p>Open a URL, app, or path, or transform the clipboard — Base64, JSON, URL-encode, case, hash — in one keystroke.</p>
+      </div>
+      <div class="card">
+        <div class="dot" style="background:rgba(77,155,255,.14);color:#4d9bff">⌕</div>
+        <h3>Instant search</h3>
+        <p>SQLite FTS5 as-you-type across history, snippets, and actions. Find anything in milliseconds.</p>
+      </div>
+      <div class="card">
+        <div class="dot" style="background:rgba(95,208,168,.14);color:#5fd0a8">⌖</div>
+        <h3>Cursor-anchored panel</h3>
+        <p>A non-activating panel that opens where your mouse is and never steals focus, so paste lands where you were.</p>
+      </div>
+      <div class="card">
+        <div class="dot" style="background:rgba(192,140,255,.14);color:#c08cff">⇧</div>
+        <h3>Per-item shortcuts</h3>
+        <p>Assign a global hotkey to any snippet, action, or folder. ⌘1–⌘0 for the top items.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block">
+  <div class="wrap">
+    <div class="shots">
+      <figure>
+        <img src="assets/screenshots/library.png" alt="Cliplex Library window managing snippets and actions" />
+        <figcaption>The Library — manage snippets &amp; actions side by side</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/screenshots/settings.png" alt="Cliplex Settings" />
+        <figcaption>Settings — local-only, no telemetry</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="compare">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>How Cliplex compares</h2>
+      <p>One fast, native, MIT-licensed app that combines what others split apart.</p>
+    </div>
+    <div class="table-wrap">
+      <table class="compare">
+        <thead>
+          <tr><th></th><th class="us">Cliplex</th><th>Maccy</th><th>Clipy</th><th>CopyQ</th><th>Paste</th><th>Raycast</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Clipboard history</td><td class="us yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+          <tr><td>Snippet folders</td><td class="us yes">✓</td><td class="no">✗</td><td class="yes">✓</td><td class="partial">~</td><td class="partial">~</td><td class="yes">✓</td></tr>
+          <tr><td>Quick actions / transforms</td><td class="us yes">✓</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✓</td><td class="no">✗</td><td class="yes">✓</td></tr>
+          <tr><td>Instant full-text search</td><td class="us yes">✓</td><td class="yes">✓</td><td class="no">✗</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+          <tr><td>Per-item global shortcuts</td><td class="us yes">✓</td><td class="partial">~</td><td class="partial">~</td><td class="partial">~</td><td class="partial">~</td><td class="yes">✓</td></tr>
+          <tr><td>Cursor-anchored panel</td><td class="us yes">✓</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✓</td><td class="no">✗</td></tr>
+          <tr><td>Local-only, no telemetry</td><td class="us yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">✗</td><td class="no">✗</td></tr>
+          <tr><td>Free &amp; open source</td><td class="us yes">✓ MIT</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">✗</td><td class="no">✗</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="install">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Install</h2>
+      <p>Download the DMG, or build from source.</p>
+    </div>
+    <div class="install">
+      <h3>Download</h3>
+      <p style="color:var(--muted)">Grab the latest <a href="https://github.com/Ron537/Cliplex/releases/latest">Cliplex.dmg</a>, open it, and drag <strong>Cliplex</strong> to Applications.</p>
+      <div class="callout">
+        Release builds are ad-hoc signed (free, not notarized), so on first launch macOS may say it
+        “could not verify” the app. Approve it once via <strong>System Settings → Privacy &amp; Security → Open Anyway</strong>,
+        or run <code>xattr -dr com.apple.quarantine /Applications/Cliplex.app</code>.
+      </div>
+      <h3 style="margin-top:24px">Build from source</h3>
+      <pre>git clone https://github.com/Ron537/Cliplex.git
+cd Cliplex
+./scripts/build-app.sh
+open build/Cliplex.app</pre>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="brand"><img src="assets/icon.svg" alt="" /> Cliplex</div>
+    <div class="footer-links">
+      <a href="https://github.com/Ron537/Cliplex">GitHub</a>
+      <a href="changelog/">Changelog</a>
+      <a href="https://github.com/Ron537/Cliplex/blob/main/PRIVACY.md">Privacy</a>
+      <a href="https://github.com/Ron537/Cliplex/blob/main/LICENSE">MIT License</a>
+    </div>
+    <div>No telemetry · Made with Swift</div>
+  </div>
+</footer>
+
+</body>
+</html>

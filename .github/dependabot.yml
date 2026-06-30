@@ -1,0 +1,36 @@
+version: 2
+updates:
+  # Swift Package Manager dependencies (GRDB.swift, KeyboardShortcuts).
+  - package-ecosystem: swift
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+    open-pull-requests-limit: 5
+    groups:
+      # Roll routine minor/patch bumps into a single PR to cut review overhead.
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+    labels:
+      - dependencies
+    # KeyboardShortcuts is intentionally pinned <1.16 (newer versions use
+    # #Preview macros the Command Line Tools toolchain can't build).
+    ignore:
+      - dependency-name: "KeyboardShortcuts"
+        versions: [">=1.16.0"]
+
+  # GitHub Actions workflow versions.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+    labels:
+      - dependencies
+      - github-actions
