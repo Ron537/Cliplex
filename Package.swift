@@ -7,7 +7,7 @@ let package = Package(
         .macOS(.v14)
     ],
     dependencies: [
-        .package(url: "https://github.com/groue/GRDB.swift", from: "6.29.0"),
+        .package(url: "https://github.com/groue/GRDB.swift", from: "7.11.1"),
         .package(url: "https://github.com/sindresorhus/KeyboardShortcuts", "1.12.0"..<"1.16.0")
     ],
     targets: [
