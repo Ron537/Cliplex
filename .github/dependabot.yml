@@ -19,9 +19,10 @@ updates:
     labels:
       - dependencies
     # KeyboardShortcuts is intentionally pinned <1.16 (newer versions use
-    # #Preview macros the Command Line Tools toolchain can't build).
+    # #Preview macros the Command Line Tools toolchain can't build). For the
+    # Swift ecosystem Dependabot identifies the package by its URL-style name.
     ignore:
-      - dependency-name: "KeyboardShortcuts"
+      - dependency-name: "github.com/sindresorhus/keyboardshortcuts"
         versions: [">=1.16.0"]
 
   # GitHub Actions workflow versions.
