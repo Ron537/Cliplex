@@ -105,10 +105,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func installStatusItem() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = item.button {
-            button.image = NSImage(
-                systemSymbolName: "doc.on.clipboard",
-                accessibilityDescription: "Cliplex")
-            button.image?.isTemplate = true
+            // Prefer the bundled monochrome menu-bar mark; fall back to an SF
+            // Symbol when running the raw executable (resources not present).
+            let image = NSImage(named: "MenuBarIconTemplate")
+                ?? NSImage(systemSymbolName: "doc.on.clipboard",
+                           accessibilityDescription: "Cliplex")
+            image?.isTemplate = true
+            button.image = image
         }
 
         let menu = NSMenu()

@@ -180,6 +180,7 @@ No. Zero network access, no telemetry, no account. Everything is local.
 | `Resources/` | `Info.plist`, entitlements, bundled fonts |
 | `scripts/` | Build/bundle/sign and test helpers |
 | `tools/screenshots/` | Reusable screenshot pipeline (generic demo data) |
+| `assets/branding/` | Vector logo masters; regenerate icons with `scripts/gen-icons.sh` |
 | `site/` | GitHub Pages landing page + changelog template. Preview locally with `node scripts/serve-site.mjs` (builds `_site/`, serves on :8080, live-rebuilds) |
 
 ## Build & run

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Monochrome menu-bar template mark (black on transparent). macOS recolors
+       it for light/dark via isTemplate. The duplicate/copy motif of the icon. -->
+  <rect x="160" y="56" width="296" height="296" rx="66" fill="none" stroke="#000" stroke-width="40"/>
+  <rect x="56" y="160" width="296" height="296" rx="66" fill="#000"/>
+</svg>

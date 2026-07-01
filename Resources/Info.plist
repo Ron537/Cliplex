@@ -8,6 +8,10 @@
     <string>Cliplex</string>
     <key>CFBundleExecutable</key>
     <string>Cliplex</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
+    <key>CFBundleIconName</key>
+    <string>AppIcon</string>
     <key>CFBundleIdentifier</key>
     <string>com.rborysowski.cliplex</string>
     <key>CFBundleVersion</key>

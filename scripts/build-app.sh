@@ -45,6 +45,12 @@ mkdir -p "$BIN_DIR" "$RES_DIR"
 cp "$BIN_PATH" "$BIN_DIR/Cliplex"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 
+# App icon (Finder / Applications / Dock) and the monochrome menu-bar template.
+[ -f Resources/AppIcon.icns ] && cp Resources/AppIcon.icns "$RES_DIR/AppIcon.icns"
+for f in MenuBarIconTemplate.png "MenuBarIconTemplate@2x.png"; do
+  [ -f "Resources/$f" ] && cp "Resources/$f" "$RES_DIR/$f"
+done
+
 # Bundle the UI fonts (auto-registered via Info.plist ATSApplicationFontsPath)
 # together with their OFL license texts (the SIL OFL requires the license to
 # travel with the fonts on redistribution).
