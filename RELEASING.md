@@ -35,22 +35,14 @@ is never quarantined.)
 
 ## Updating the Homebrew cask
 
-This is **automated**: after each tagged release, the `update-tap` job in
-[`.github/workflows/release.yml`](.github/workflows/release.yml) bumps
-`version` + `sha256` in `Casks/cliplex.rb` in the tap
-([Ron537/homebrew-tap](https://github.com/Ron537/homebrew-tap)) and pushes.
+This is **automated with no secrets**. The tap repo
+([Ron537/homebrew-tap](https://github.com/Ron537/homebrew-tap)) has a scheduled
+workflow (`.github/workflows/update-casks.yml`) that checks each app's latest
+GitHub release and bumps its cask's `version` + `sha256` to match, committing
+with the tap's own built-in `GITHUB_TOKEN` (no personal access token needed).
 
-**One-time setup** — the job needs a token that can push to the *tap* repo (the
-default `GITHUB_TOKEN` only has access to this repo):
-
-1. Create a **fine-grained personal access token** (GitHub → Settings →
-   Developer settings → Fine-grained tokens) scoped to **only** the
-   `Ron537/homebrew-tap` repository, with **Contents: Read and write**.
-2. Add it to this repo as an Actions secret named **`HOMEBREW_TAP_TOKEN`**
-   (Settings → Secrets and variables → Actions → New repository secret).
-
-If the secret is absent the job simply no-ops (releases still succeed); update
-the cask manually with `shasum -a 256 dist/Cliplex-<version>.dmg`.
+It runs every few hours; to publish an update immediately after a release, open
+the tap repo → **Actions → Update casks → Run workflow**.
 
 ## Future: notarized builds (optional, paid)
 
