@@ -293,7 +293,7 @@ final class AppServices {
         return line
     }
 
-    /// `~/Library/Application Support/com.rborysowski.cliplex/cliplex.db`,
+    /// `~/Library/Application Support/com.ron537.cliplex/cliplex.db`,
     /// matching the prior build so existing history/snippets are reused.
     private static func databasePath() -> String {
         // General-purpose override used by the test suite and the screenshot
@@ -302,7 +302,7 @@ final class AppServices {
             return override
         }
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        let dir = base.appendingPathComponent("com.rborysowski.cliplex", isDirectory: true)
+        let dir = base.appendingPathComponent("com.ron537.cliplex", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir.appendingPathComponent("cliplex.db").path
     }

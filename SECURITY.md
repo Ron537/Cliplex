@@ -28,7 +28,7 @@ Cliplex is a local-only macOS menu-bar app. By design:
 - **No network access.** Cliplex makes no network requests — no analytics, no
   crash reporting, no sync, no auto-update telemetry. All data stays on device.
 - **Local storage.** History and snippets live in a SQLite database at
-  `~/Library/Application Support/com.rborysowski.cliplex/cliplex.db`. It is **not
+  `~/Library/Application Support/com.ron537.cliplex/cliplex.db`. It is **not
   encrypted at rest** in this release; protect it with FileVault. Optional
   SQLCipher encryption is planned.
 - **No App Sandbox.** A clipboard manager must read the global pasteboard and

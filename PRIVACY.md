@@ -14,7 +14,7 @@ most sensitive data on your machine, and Cliplex treats it that way.
 ## What is stored, and where
 
 - Clipboard history and snippets are stored in a **local SQLite database** at
-  `~/Library/Application Support/com.rborysowski.cliplex/cliplex.db`.
+  `~/Library/Application Support/com.ron537.cliplex/cliplex.db`.
 - The database is **not encrypted at rest** in this release. Optional encryption
   (SQLCipher) is planned. Until then, rely on macOS full-disk encryption
   (FileVault).

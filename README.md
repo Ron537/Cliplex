@@ -150,7 +150,7 @@ By design — clips marked concealed/transient (password managers, etc.) and app
 in your exclusion list are never stored. See [PRIVACY.md](PRIVACY.md).
 
 **Where is my data? How do I reset it?**
-Everything lives in `~/Library/Application Support/com.rborysowski.cliplex/`.
+Everything lives in `~/Library/Application Support/com.ron537.cliplex/`.
 Quit Cliplex and delete that folder to start fresh.
 
 **Does Cliplex phone home / sync / collect analytics?**
@@ -205,7 +205,7 @@ With full Xcode installed, `swift build` / `swift test` work without extra flags
 ## Privacy
 
 See [PRIVACY.md](PRIVACY.md). In short: everything is stored locally in
-`~/Library/Application Support/com.rborysowski.cliplex/cliplex.db`, there is no
+`~/Library/Application Support/com.ron537.cliplex/cliplex.db`, there is no
 network access, and password-manager / concealed clips are ignored.
 
 ## Contributing

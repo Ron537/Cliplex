@@ -28,7 +28,7 @@ cask "cliplex" do
   # Security → "Open Anyway" (see the README "First launch" section).
 
   zap trash: [
-    "~/Library/Application Support/com.rborysowski.cliplex",
-    "~/Library/Preferences/com.rborysowski.cliplex.plist",
+    "~/Library/Application Support/com.ron537.cliplex",
+    "~/Library/Preferences/com.ron537.cliplex.plist",
   ]
 end

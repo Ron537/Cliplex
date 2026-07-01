@@ -69,7 +69,7 @@ if [ -z "${SIGN_IDENTITY:-}" ] && ! security find-certificate -c "$CERT_NAME" >/
   echo "    dev certificate not found — creating it"
   "$HERE/scripts/make-dev-cert.sh"
 fi
-SIGN_ARGS=(--force --options runtime --identifier "com.rborysowski.cliplex"
+SIGN_ARGS=(--force --options runtime --identifier "com.ron537.cliplex"
   --entitlements Resources/Cliplex.entitlements --sign "$CERT_NAME")
 # A secure timestamp is only needed for notarized Developer ID builds; skip it
 # for ad-hoc ("-") and offline self-signed dev builds.

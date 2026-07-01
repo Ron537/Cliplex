@@ -83,7 +83,7 @@ Key flow & seams (require reading several files):
   intentionally match an earlier Rust/Tauri build so existing databases open
   seamlessly. Don't rename keys or break the schema casually; note stale
   references to "Rust/Tauri" in comments — the app is now pure Swift.
-- **DB location & override:** `~/Library/Application Support/com.rborysowski.cliplex/cliplex.db`.
+- **DB location & override:** `~/Library/Application Support/com.ron537.cliplex/cliplex.db`.
   Set `CLIPLEX_DB_PATH` to point at a throwaway DB (used by tests and tooling).
 - **Concurrency:** UI/app types are `@MainActor`; kit value types are `Sendable`.
 
