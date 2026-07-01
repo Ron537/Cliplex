@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/screenshots/panel.png" alt="Cliplex quick panel" width="320" />
+<img src="assets/branding/icon.png" alt="Cliplex" width="120" />
 
 # Cliplex
 
@@ -11,6 +11,8 @@
 [![Platform](https://img.shields.io/badge/macOS-14%2B-black?logo=apple)](#install)
 [![Made with Swift](https://img.shields.io/badge/Swift-AppKit%20%2B%20SwiftUI-F05138?logo=swift&logoColor=white)](#stack)
 [![No telemetry](https://img.shields.io/badge/telemetry-none-22c55e)](PRIVACY.md)
+
+<img src="assets/screenshots/panel.png" alt="Cliplex quick panel" width="300" />
 
 </div>
 

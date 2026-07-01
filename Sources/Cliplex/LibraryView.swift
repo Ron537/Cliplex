@@ -97,11 +97,7 @@ struct LibraryView: View {
 
     private var brand: some View {
         HStack(spacing: 9) {
-            RoundedRectangle(cornerRadius: 7)
-                .fill(LinearGradient(colors: [Theme.accent, Theme.accent.opacity(0.8)],
-                                     startPoint: .top, endPoint: .bottom))
-                .frame(width: 22, height: 22)
-                .overlay(Image(systemName: "doc.on.clipboard.fill").font(.system(size: 11)).foregroundStyle(Theme.accentInk))
+            BrandMark(size: 24)
             Text("Cliplex").font(.display(15, .bold))
             Text("Library").font(.ui(13, .medium)).foregroundStyle(Theme.mutedText)
         }

@@ -78,6 +78,7 @@ render "$MENU_SVG" 36 Resources/MenuBarIconTemplate@2x.png
 echo "==> updating site assets"
 cp "$ICON_SVG" site/assets/icon.svg
 cp "$TMP/icon_256.png" site/assets/favicon.png
+cp "$TMP/icon_512.png" assets/branding/icon.png
 
 echo "==> done:"
 echo "    Resources/AppIcon.icns"
