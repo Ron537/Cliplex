@@ -55,7 +55,7 @@ jobs:
       - name: Generate build provenance
         if: ${{ github.ref_type == 'tag' }}
         continue-on-error: true
-        uses: actions/attest-build-provenance@v3
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: dist/*.dmg
 
