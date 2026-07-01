@@ -83,10 +83,10 @@ and zero telemetry.
 [Releases](https://github.com/Ron537/Cliplex/releases) page, open it, and drag
 **Cliplex** to **Applications**.
 
-**Homebrew (planned):**
+**Homebrew:**
 
 ```bash
-brew install --cask cliplex
+brew install --cask ron537/tap/cliplex
 ```
 
 **Build from source** (no Gatekeeper prompt):

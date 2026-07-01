@@ -8,6 +8,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Features
 
+- Install via Homebrew: `brew install --cask ron537/tap/cliplex`.
+
 - New Cliplex app icon and a matching menu-bar mark.
 
 ## [0.1.0] - 2026-07-01

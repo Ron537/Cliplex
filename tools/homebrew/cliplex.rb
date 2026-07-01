@@ -19,7 +19,7 @@ cask "cliplex" do
   desc "Fast, private, native clipboard manager — history, snippets & quick actions"
   homepage "https://github.com/Ron537/Cliplex"
 
-  depends_on macos: ">= :sonoma"
+  depends_on macos: :sonoma
 
   app "Cliplex.app"
 
