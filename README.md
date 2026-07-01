@@ -23,25 +23,26 @@ telemetry, no account, no cloud. Nothing leaves your machine.
 
 ## Why Cliplex?
 
-Most free clipboard managers make you choose: **Maccy** has great search but no
-snippets; **Clipy** has snippet folders but no search. Cliplex brings clipboard
-history, snippet folders, quick actions, **and** instant search together in one
-fast, native, MIT-licensed app — with per-item global shortcuts and zero
-telemetry.
+Most clipboard managers force a trade-off: great search but no snippets, or
+snippet folders but no search — and quick actions rarely show up at all. Cliplex
+brings clipboard history, snippet folders, quick actions, **and** instant search
+together in one fast, native, MIT-licensed app — with per-item global shortcuts
+and zero telemetry.
 
-| | **Cliplex** | Maccy | Clipy | CopyQ | Paste | Raycast |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|
-| Clipboard history | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Snippet folders | ✅ | ❌ | ✅ | ⚠️ | ⚠️ | ✅ |
-| Quick actions (open URL/app, transforms) | ✅ | ❌ | ❌ | ✅¹ | ❌ | ✅ |
-| Instant full-text search | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ |
-| Per-item / folder global shortcuts | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ |
-| Cursor-anchored panel | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
-| Local-only, no telemetry | ✅ | ✅ | ✅ | ✅ | ❌² | ❌² |
-| Free & open source | ✅ MIT | ✅ MIT | ✅ MIT | ✅ GPL | ❌ | ❌ |
-| Native (Swift / SwiftUI) | ✅ | ✅ | ✅ | ❌ Qt | ✅ | ✅ |
+| Feature | **Cliplex** | Other clipboard apps |
+|---|:---:|:---:|
+| Clipboard history | ✅ | ✅ |
+| Snippet folders | ✅ | ⚠️ often missing |
+| Quick actions (open URL/app, transforms) | ✅ | ❌ rarely |
+| Instant full-text search | ✅ | ⚠️ sometimes |
+| Per-item / folder global shortcuts | ✅ | ⚠️ limited |
+| Cursor-anchored quick panel | ✅ | ❌ rarely |
+| 100% local, no telemetry | ✅ | ⚠️ not always |
+| Free & open source | ✅ MIT | ⚠️ often paid or closed |
+| Native macOS app (Swift / SwiftUI) | ✅ | ⚠️ varies |
+| **All of the above, in one app** | ✅ | ❌ |
 
-<sub>✅ built-in · ⚠️ partial / different model · ❌ not available. ¹ via scripting. ² cloud sync / commercial. Comparison reflects publicly documented features and evolves over time.</sub>
+<sub>✅ built-in · ⚠️ partial / varies by app · ❌ not available. “Other clipboard apps” reflects the typical state across popular macOS alternatives; individual apps differ and features evolve.</sub>
 
 ## Highlights
 
