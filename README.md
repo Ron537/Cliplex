@@ -79,7 +79,7 @@ and zero telemetry.
 > fine — macOS just shows a one-time Gatekeeper prompt for a *downloaded* build.
 > See [first launch](#first-launch) below. Building from source has no prompt.
 
-**Download:** grab the latest `Cliplex.dmg` from the
+**Download:** grab the latest `Cliplex-<version>.dmg` from the
 [Releases](https://github.com/Ron537/Cliplex/releases) page, open it, and drag
 **Cliplex** to **Applications**.
 
@@ -113,15 +113,6 @@ xattr -dr com.apple.quarantine /Applications/Cliplex.app
 ```
 
 You only need to do this once.
-
-**Build from source:**
-
-```bash
-git clone https://github.com/Ron537/Cliplex.git
-cd Cliplex
-./scripts/build-app.sh      # build + bundle + sign
-open build/Cliplex.app
-```
 
 Open the panel with **⌘⇧V**. Auto-paste needs **Accessibility** permission
 (System Settings → Privacy & Security → Accessibility); the dev build signs with
@@ -166,6 +157,8 @@ Quit Cliplex and delete that folder to start fresh.
 No. Zero network access, no telemetry, no account. Everything is local.
 
 
+
+## Stack
 
 - **Swift** (Swift Package Manager), macOS 14+
 - **AppKit** menu-bar agent + **SwiftUI** content
@@ -223,5 +216,7 @@ Issues and PRs are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) and the
 
 ## License
 
-[MIT](LICENSE). Bundled fonts are licensed under the SIL Open Font License — see
+[MIT](LICENSE). Cliplex links GRDB.swift and KeyboardShortcuts (both MIT) — see
+[THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md). Bundled fonts are licensed
+under the SIL Open Font License — see
 [`Resources/Fonts/README.md`](Resources/Fonts/README.md).

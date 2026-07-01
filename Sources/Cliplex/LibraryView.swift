@@ -251,10 +251,12 @@ struct LibraryView: View {
         .contextMenu {
             if let folder {
                 Button("Rename…") {
-                    isSnippet ? snippets.requestRenameFolder(folder.snippet!) : actions.requestRenameFolder(folder.action!)
+                    if isSnippet { if let f = folder.snippet { snippets.requestRenameFolder(f) } }
+                    else if let f = folder.action { actions.requestRenameFolder(f) }
                 }
                 Button("Delete…", role: .destructive) {
-                    isSnippet ? snippets.requestDeleteFolder(folder.snippet!) : actions.requestDeleteFolder(folder.action!)
+                    if isSnippet { if let f = folder.snippet { snippets.requestDeleteFolder(f) } }
+                    else if let f = folder.action { actions.requestDeleteFolder(f) }
                 }
             }
         }

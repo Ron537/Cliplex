@@ -51,6 +51,9 @@ for f in MenuBarIconTemplate.png "MenuBarIconTemplate@2x.png"; do
   [ -f "Resources/$f" ] && cp "Resources/$f" "$RES_DIR/$f"
 done
 
+# Third-party license notices (MIT requires them to travel with the binary).
+[ -f THIRD-PARTY-LICENSES.md ] && cp THIRD-PARTY-LICENSES.md "$RES_DIR/THIRD-PARTY-LICENSES.txt"
+
 # Bundle the UI fonts (auto-registered via Info.plist ATSApplicationFontsPath)
 # together with their OFL license texts (the SIL OFL requires the license to
 # travel with the fonts on redistribution).

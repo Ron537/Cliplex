@@ -55,9 +55,9 @@ public final class MacClipboard {
         let trimmed = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let kind: ClipKind
         let preview: String
-        if !trimmed.isEmpty {
-            preview = text!
-            if detectHexColor(text!) { kind = .color }
+        if !trimmed.isEmpty, let text {
+            preview = text
+            if detectHexColor(text) { kind = .color }
             else if hasRTF { kind = .richtext }
             else { kind = .text }
         } else if hasImage {

@@ -2,10 +2,9 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <!-- No App Sandbox: a clipboard manager needs to observe the global
-         pasteboard and synthesize keystrokes (Accessibility), which the
-         sandbox forbids. -->
-    <key>com.apple.security.automation.apple-events</key>
-    <true/>
+    <!-- Cliplex is NOT sandboxed: a clipboard manager must observe the global
+         pasteboard and synthesize ⌘V. Pasting uses CGEvent and the runtime
+         Accessibility permission (AXIsProcessTrusted) — neither of which needs
+         a code-signing entitlement — so no entitlements are requested here. -->
 </dict>
 </plist>

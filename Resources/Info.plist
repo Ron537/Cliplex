@@ -29,7 +29,7 @@
     <key>ATSApplicationFontsPath</key>
     <string>Fonts</string>
     <key>NSHumanReadableCopyright</key>
-    <string>Cliplex</string>
+    <string>© 2026 Ron Borysowski. MIT License.</string>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
 </dict>

@@ -163,13 +163,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @discardableResult
     private func showLibrary(focus: LibraryViewModel.Domain? = nil) -> LibraryWindowController {
-        if libraryWindow == nil {
+        let controller: LibraryWindowController
+        if let existing = libraryWindow {
+            controller = existing
+        } else {
             let viewModel = LibraryViewModel(services: services)
             libraryViewModel = viewModel
-            libraryWindow = LibraryWindowController(viewModel: viewModel)
+            controller = LibraryWindowController(viewModel: viewModel)
+            libraryWindow = controller
         }
-        libraryWindow?.show(focus: focus)
-        return libraryWindow!
+        controller.show(focus: focus)
+        return controller
     }
 
     @objc private func openSettings() {
