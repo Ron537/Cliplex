@@ -13,6 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var libraryViewModel: LibraryViewModel?
     private var libraryWindow: LibraryWindowController?
     private var settingsWindow: SettingsWindowController?
+    private var pauseMenuItem: NSMenuItem?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         AppFonts.register()
@@ -45,6 +46,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if !screenshotMode {
             services.startMonitoring()
         }
+        updatePauseUI()
 
         NotificationCenter.default.addObserver(
             self, selector: #selector(applyAppearance),
@@ -55,6 +57,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             runScreenshotMode(target)
         }
         #endif
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        services?.clearHistoryOnQuitIfNeeded()
     }
 
     #if CLIPLEX_SCREENSHOTS
@@ -254,6 +260,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         addItem(menu, "Open Snippets", #selector(openSnippetsPanel))
         addItem(menu, "Open Actions", #selector(openActionsPanel))
         menu.addItem(.separator())
+        pauseMenuItem = addItem(menu, "Pause Cliplex", #selector(togglePause))
+        menu.addItem(.separator())
         addItem(menu, "Library…", #selector(openLibrary))
         addItem(menu, "Settings…", #selector(openSettings), key: ",")
         menu.addItem(.separator())
@@ -262,10 +270,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = item
     }
 
-    private func addItem(_ menu: NSMenu, _ title: String, _ action: Selector, key: String = "") {
+    @discardableResult
+    private func addItem(_ menu: NSMenu, _ title: String, _ action: Selector, key: String = "") -> NSMenuItem {
         let item = NSMenuItem(title: title, action: action, keyEquivalent: key)
         item.target = self
         menu.addItem(item)
+        return item
+    }
+
+    @objc private func togglePause() {
+        services.setMonitoring(!services.isMonitoring)
+        updatePauseUI()
+    }
+
+    /// Reflects the paused state in the menu (title) and the menu-bar icon (dimmed).
+    private func updatePauseUI() {
+        let paused = !services.isMonitoring
+        pauseMenuItem?.title = paused ? "Resume Cliplex" : "Pause Cliplex"
+        statusItem?.button?.appearsDisabled = paused
+        statusItem?.button?.toolTip = paused ? "Cliplex — paused (not capturing)" : "Cliplex"
     }
 
     private func installShortcuts() {

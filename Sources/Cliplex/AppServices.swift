@@ -37,6 +37,26 @@ final class AppServices {
         monitor.start()
     }
 
+    /// Whether the clipboard monitor is currently capturing.
+    var isMonitoring: Bool { monitor.isRunning }
+
+    /// Pauses or resumes clipboard capturing. Resuming does not capture whatever
+    /// is already on the pasteboard — only clips copied afterwards.
+    func setMonitoring(_ enabled: Bool) {
+        if enabled {
+            guard !monitor.isRunning else { return }
+            monitor.start(capturingCurrent: false)
+        } else {
+            monitor.stop()
+        }
+    }
+
+    /// Clears unpinned history on quit when the corresponding setting is enabled.
+    func clearHistoryOnQuitIfNeeded() {
+        guard settings.clearHistoryOnQuit else { return }
+        _ = try? store.pruneClips(maxItems: 0)
+    }
+
     // MARK: - Reads
 
     func clips(query: String) -> [Clip] {

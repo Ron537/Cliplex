@@ -93,6 +93,7 @@ import Testing
         settings.excludedApps = ["com.x", "com.y"]
         settings.pasteOnSelect = false
         settings.theme = .dark
+        settings.clearHistoryOnQuit = true
         try settings.save(to: store)
 
         let loaded = AppSettings.load(from: store)

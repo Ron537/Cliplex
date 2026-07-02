@@ -31,8 +31,15 @@ public final class ClipboardMonitor {
         self.onChange = onChange
     }
 
-    /// Starts polling. The current clipboard is captured on the first tick.
-    public func start() {
+    /// Whether polling is currently active.
+    public var isRunning: Bool { timer != nil }
+
+    /// Starts polling. On a normal start the current clipboard is captured on the
+    /// first tick. Pass `capturingCurrent: false` when *resuming* after a pause so
+    /// whatever is already on the pasteboard (possibly copied while paused) is not
+    /// captured — only subsequent changes are.
+    public func start(capturingCurrent: Bool = true) {
+        if !capturingCurrent { lastToken = clipboard.changeToken }
         scheduleTimer(intervalMs: settingsProvider().pollIntervalMs)
     }
 

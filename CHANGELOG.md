@@ -6,8 +6,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-02
+
 ### Features
 
+- Pause and resume clipboard capture from the menu-bar menu; the icon dims while paused.
+- Optionally clear your history on quit (Settings → Privacy). Pinned clips are kept.
 - Install via Homebrew: `brew install --cask ron537/tap/cliplex`.
 - New Cliplex app icon and a matching menu-bar mark.
 
@@ -34,5 +38,6 @@ First public release.
   database is entirely local with no network access or telemetry.
 - Native macOS menu-bar app (AppKit + SwiftUI), bundled fonts, light/dark theme.
 
-[Unreleased]: https://github.com/Ron537/Cliplex/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Ron537/Cliplex/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Ron537/Cliplex/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Ron537/Cliplex/releases/tag/v0.1.0

@@ -10,6 +10,7 @@ public enum SettingsKey {
     public static let pasteOnSelect = "paste_on_select"
     public static let theme = "theme"
     public static let compactPanel = "compact_panel"
+    public static let clearHistoryOnQuit = "clear_history_on_quit"
 }
 
 /// Password managers / sensitive apps excluded by default on first run, as a
@@ -42,6 +43,8 @@ public struct AppSettings: Equatable, Sendable {
     public var theme: Appearance
     /// Compact panel rows: single line + smaller icon (vs. roomy two-line).
     public var compactPanel: Bool
+    /// When enabled, unpinned history is cleared automatically on quit.
+    public var clearHistoryOnQuit: Bool
 
     public init(
         maxHistory: Int64 = 500,
@@ -50,7 +53,8 @@ public struct AppSettings: Equatable, Sendable {
         excludedApps: [String] = [],
         pasteOnSelect: Bool = true,
         theme: Appearance = .system,
-        compactPanel: Bool = false
+        compactPanel: Bool = false,
+        clearHistoryOnQuit: Bool = false
     ) {
         self.maxHistory = maxHistory
         self.pollIntervalMs = pollIntervalMs
@@ -59,6 +63,7 @@ public struct AppSettings: Equatable, Sendable {
         self.pasteOnSelect = pasteOnSelect
         self.theme = theme
         self.compactPanel = compactPanel
+        self.clearHistoryOnQuit = clearHistoryOnQuit
     }
 
     /// The capture filter derived from these settings.
@@ -95,6 +100,9 @@ public struct AppSettings: Equatable, Sendable {
         if let raw = try? store.setting(SettingsKey.compactPanel) {
             settings.compactPanel = raw == "true"
         }
+        if let raw = try? store.setting(SettingsKey.clearHistoryOnQuit) {
+            settings.clearHistoryOnQuit = raw == "true"
+        }
         return settings
     }
 
@@ -107,6 +115,7 @@ public struct AppSettings: Equatable, Sendable {
         try store.setSetting(SettingsKey.pasteOnSelect, pasteOnSelect ? "true" : "false")
         try store.setSetting(SettingsKey.theme, theme.rawValue)
         try store.setSetting(SettingsKey.compactPanel, compactPanel ? "true" : "false")
+        try store.setSetting(SettingsKey.clearHistoryOnQuit, clearHistoryOnQuit ? "true" : "false")
     }
 }
 

@@ -203,6 +203,10 @@ struct SettingsView: View {
                             desc: "Skip anything copied from password managers.") {
                     SettingsToggle(isOn: $viewModel.settings.ignoreConcealed)
                 }
+                SettingsRow(icon: "trash", title: "Clear history on quit",
+                            desc: "Wipe unpinned history when you quit Cliplex. Pinned clips stay.") {
+                    SettingsToggle(isOn: $viewModel.settings.clearHistoryOnQuit)
+                }
             }
             InfoCallout(icon: "checkmark.shield", tint: Theme.snippetAccent,
                         text: "No telemetry, no accounts, no cloud. History and snippets are stored in a local SQLite database you fully own.")
