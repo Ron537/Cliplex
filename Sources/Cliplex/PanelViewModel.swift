@@ -72,6 +72,10 @@ final class PanelViewModel: ObservableObject {
         query = ""
         selection = 0
         needsAccessibility = !Accessibility.isTrusted
+        #if CLIPLEX_SCREENSHOTS
+        // Never show the "grant Accessibility" prompt in captured demos.
+        if ScreenshotMode.requestedTarget != nil { needsAccessibility = false }
+        #endif
         reload()
         if let focusFolder,
            let idx = layout.nav.firstIndex(where: {
