@@ -21,6 +21,16 @@ snippets, runs quick clipboard **actions**, and finds any of it instantly with
 full-text search — all from a panel that opens **right at your cursor**. No
 telemetry, no account, no cloud. Nothing leaves your machine.
 
+```bash
+brew install --cask ron537/tap/cliplex
+```
+
+<div align="center">
+<sub><b><a href="#install">Other install options</a></b> · macOS 14+ · Apple Silicon &amp; Intel · Free &amp; MIT · Open the panel with <kbd>⌘⇧V</kbd></sub>
+
+⭐ **If Cliplex saves you a paste, [star the repo](https://github.com/Ron537/Cliplex) — it genuinely helps.**
+</div>
+
 ## Why Cliplex?
 
 Most clipboard managers force a trade-off: great search but no snippets, or
