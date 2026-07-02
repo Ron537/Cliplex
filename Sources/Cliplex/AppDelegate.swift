@@ -34,7 +34,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ShortcutCenter.shared.configure(services: services) { [weak self] mode, folderID in
             self?.panel.present(mode: mode, focusFolder: folderID)
         }
-        services.startMonitoring()
+
+        // Don't capture the live clipboard when rendering screenshots/GIFs —
+        // it would pollute the generic demo database with real clips.
+        #if CLIPLEX_SCREENSHOTS
+        let screenshotMode = ScreenshotMode.requestedTarget != nil
+        #else
+        let screenshotMode = false
+        #endif
+        if !screenshotMode {
+            services.startMonitoring()
+        }
 
         NotificationCenter.default.addObserver(
             self, selector: #selector(applyAppearance),
@@ -54,6 +64,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// PNG, and quits. See `ScreenshotMode` for the reusable rendering primitive.
     private func runScreenshotMode(_ target: String) {
         NSApp.appearance = NSAppearance(named: .darkAqua)
+
+        if target == "gif" {
+            runDemoGif()
+            return
+        }
+        if target == "snippetgif" {
+            runCreateGif(flow: .snippet)
+            return
+        }
+        if target == "actiongif" {
+            runCreateGif(flow: .action)
+            return
+        }
+
         var explicitView: NSView?
         var window: NSWindow?
         switch target {
@@ -74,6 +98,117 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if let view { ScreenshotMode.write(view, named: target) }
             NSApp.terminate(nil)
         }
+    }
+
+    /// Drives the quick panel through a scripted walkthrough (clipboard history →
+    /// type-to-search → snippets → actions), capturing one real-app frame per
+    /// step. `tools/screenshots/capture-demo-gif.sh` stitches them into the GIF.
+    private func runDemoGif() {
+        panel.present(mode: .clipboard, focusFolder: nil)
+        panel.debugContentView?.window?.appearance = NSAppearance(named: .darkAqua)
+        let vm = panel.debugViewModel
+        guard let view = panel.debugContentView else { NSApp.terminate(nil); return }
+
+        // (frame-name, mutation applied before the frame is captured).
+        // Character-by-character typing frames zip by fast in assembly; the
+        // main states (full lists + filtered results) are held longer.
+        let steps: [(String, () -> Void)] = [
+            ("01", {}),                                              // clipboard history
+            ("02", { vm.query = "s" }),
+            ("03", { vm.query = "se" }),
+            ("04", { vm.query = "sel" }),
+            ("05", { vm.query = "sele" }),
+            ("06", { vm.query = "selec" }),
+            ("07", { vm.query = "select" }),                         // filtered result
+            ("08", { vm.query = ""; vm.switchMode(to: .snippets) }), // snippets
+            ("09", { vm.query = "e" }),
+            ("10", { vm.query = "em" }),
+            ("11", { vm.query = "ema" }),
+            ("12", { vm.query = "emai" }),
+            ("13", { vm.query = "email" }),                          // filtered snippets
+            ("14", { vm.query = ""; vm.switchMode(to: .actions) }),  // actions
+        ]
+
+        var i = 0
+        func next() {
+            guard i < steps.count else { NSApp.terminate(nil); return }
+            let (name, apply) = steps[i]
+            i += 1
+            apply()
+            // Wait out the 60 ms query debounce + SwiftUI re-render, then capture.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                ScreenshotMode.write(view, named: "frame-\(name)")
+                next()
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { next() }
+    }
+
+    /// Drives the Library window through creating a snippet and an action with
+    /// character-by-character typing, capturing a frame per step. Frames are
+    /// named `frame-<idx>-<role>` (role = type | beat | hold) so the assembler
+    /// can time typing fast and hold the milestones. See `capture-demo-gif.sh`.
+    private enum CreateFlow { case snippet, action }
+
+    private func runCreateGif(flow: CreateFlow) {
+        let focus: LibraryViewModel.Domain = (flow == .snippet) ? .snippet : .action
+        let controller = showLibrary(focus: focus)
+        controller.window?.appearance = NSAppearance(named: .darkAqua)
+        guard let vm = libraryViewModel, let view = controller.window?.contentView else {
+            NSApp.terminate(nil); return
+        }
+        let snip = vm.snippets
+        let act = vm.actions
+
+        // (settle-delay, role, mutation)
+        typealias Step = (Double, String, () -> Void)
+        var steps: [Step] = []
+        func hold(_ apply: @escaping () -> Void) { steps.append((0.4, "hold", apply)) }
+        func beat(_ apply: @escaping () -> Void) { steps.append((0.3, "beat", apply)) }
+        // Types `full` one character at a time, calling `set` with each prefix.
+        func typeInto(_ full: String, _ set: @escaping (String) -> Void) {
+            var acc = ""
+            for ch in full {
+                acc.append(ch)
+                let cur = acc
+                steps.append((0.13, "type", { set(cur) }))
+            }
+        }
+
+        switch flow {
+        case .snippet:
+            beat({})                                    // library (snippets)
+            beat({ vm.newSnippet() })                   // empty snippet editor
+            typeInto("Out of office") { snip.draftTitle = $0 }
+            typeInto("Out of office until Monday. For anything urgent, contact {clipboard}.") {
+                snip.draftContent = $0
+            }
+            hold({})                                    // hold final content ({clipboard} chip)
+            hold({ snip.saveSnippet() })                // saved → appears in list
+        case .action:
+            beat({})                                    // library (actions)
+            beat({ vm.newAction() })                    // empty action editor (Open URL)
+            typeInto("Repo issues") { act.draftTitle = $0 }
+            typeInto("https://github.com/{clipboard}/issues") { act.draftValue = $0 }
+            hold({})                                    // hold final URL ({clipboard} chip)
+            hold({ act.save() })                        // saved → appears in list
+        }
+
+        var idx = 0
+        var i = 0
+        func next() {
+            guard i < steps.count else { NSApp.terminate(nil); return }
+            let (delay, role, apply) = steps[i]
+            i += 1
+            idx += 1
+            apply()
+            let name = "frame-\(String(format: "%03d", idx))-\(role)"
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                ScreenshotMode.write(view, named: name)
+                next()
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { next() }
     }
     #endif
 

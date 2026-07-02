@@ -6,6 +6,9 @@ on:
     paths:
       - "site/**"
       - "assets/screenshots/**"
+      - "assets/demo.gif"
+      - "assets/demo-snippet.gif"
+      - "assets/demo-action.gif"
       - "scripts/build-site.mjs"
       - "scripts/build-changelog.mjs"
       - "CHANGELOG.md"

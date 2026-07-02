@@ -71,7 +71,7 @@ const server = createServer((req, res) => {
 })
 
 // Debounced rebuild on source changes.
-const watched = ['site', 'assets/screenshots', 'CHANGELOG.md', 'scripts/build-site.mjs', 'scripts/build-changelog.mjs']
+const watched = ['site', 'assets/screenshots', 'assets/demo.gif', 'assets/demo-snippet.gif', 'assets/demo-action.gif', 'CHANGELOG.md', 'scripts/build-site.mjs', 'scripts/build-changelog.mjs']
 let timer = null
 function onChange() {
   clearTimeout(timer)

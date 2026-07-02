@@ -12,8 +12,6 @@ INSERT INTO snippet_folders (name, sort_order, created_at) VALUES
 INSERT INTO snippets (folder_id, title, content, sort_order, created_at, updated_at) VALUES
  ((SELECT id FROM snippet_folders WHERE name='Email'), 'Meeting follow-up',
   'Hi {clipboard},' || char(10) || char(10) || 'Thanks for the great discussion today. I''ll send the notes and next steps shortly.' || char(10) || char(10) || 'Best,' || char(10) || 'Ron', 0, strftime('%s','now')*1000, strftime('%s','now')*1000),
- ((SELECT id FROM snippet_folders WHERE name='Email'), 'Out of office',
-  'I''m currently out of the office with limited access to email and will reply when I''m back.', 1, strftime('%s','now')*1000, strftime('%s','now')*1000),
  ((SELECT id FROM snippet_folders WHERE name='Code'), 'React component',
   'export function Component() {' || char(10) || '  return <div />;' || char(10) || '}', 0, strftime('%s','now')*1000, strftime('%s','now')*1000),
  ((SELECT id FROM snippet_folders WHERE name='Code'), 'Try / catch',
@@ -37,7 +35,6 @@ INSERT INTO action_folders (name, sort_order, created_at) VALUES
 -- Actions
 INSERT INTO actions (folder_id, title, type, value, transform, sort_order, created_at, updated_at) VALUES
  ((SELECT id FROM action_folders WHERE name='Search'), 'Search Google', 'open_url', 'https://www.google.com/search?q={clipboard}', NULL, 0, strftime('%s','now')*1000, strftime('%s','now')*1000),
- ((SELECT id FROM action_folders WHERE name='Search'), 'Open GitHub repo', 'open_url', 'https://github.com/{clipboard}', NULL, 1, strftime('%s','now')*1000, strftime('%s','now')*1000),
  ((SELECT id FROM action_folders WHERE name='Search'), 'Translate', 'open_url', 'https://translate.google.com/?text={clipboard}', NULL, 2, strftime('%s','now')*1000, strftime('%s','now')*1000),
  ((SELECT id FROM action_folders WHERE name='Dev tools'), 'Base64 encode', 'transform', '', 'base64_encode', 0, strftime('%s','now')*1000, strftime('%s','now')*1000),
  ((SELECT id FROM action_folders WHERE name='Dev tools'), 'JSON prettify', 'transform', '', 'json_pretty', 1, strftime('%s','now')*1000, strftime('%s','now')*1000),

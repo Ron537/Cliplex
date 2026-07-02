@@ -33,6 +33,12 @@ if (existsSync(shots)) {
   cpSync(shots, resolve(out, 'assets/screenshots'), { recursive: true })
 }
 
+// 2b. Copy the demo GIFs used by the landing page.
+for (const gif of ['demo.gif', 'demo-snippet.gif', 'demo-action.gif']) {
+  const src = resolve(root, 'assets', gif)
+  if (existsSync(src)) cpSync(src, resolve(out, 'assets', gif))
+}
+
 // 3. Render the changelog page + sitemap.
 const res = spawnSync(process.execPath, [resolve(__dirname, 'build-changelog.mjs')], {
   stdio: 'inherit',

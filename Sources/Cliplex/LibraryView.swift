@@ -297,6 +297,7 @@ struct LibraryView: View {
                     }
                 }
                 .padding(8)
+                .id(library.listIsSnippets)
             }
         }
     }

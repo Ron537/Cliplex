@@ -12,7 +12,7 @@
 [![Made with Swift](https://img.shields.io/badge/Swift-AppKit%20%2B%20SwiftUI-F05138?logo=swift&logoColor=white)](#stack)
 [![No telemetry](https://img.shields.io/badge/telemetry-none-22c55e)](PRIVACY.md)
 
-<img src="assets/screenshots/panel.png" alt="Cliplex quick panel" width="300" />
+<img src="assets/demo.gif" alt="Cliplex quick panel — history, search, snippets, and actions" width="360" />
 
 </div>
 
@@ -69,6 +69,18 @@ and zero telemetry.
 | ![Library](assets/screenshots/library.png) | ![Settings](assets/screenshots/settings.png) |
 
 <sub>Screenshots use generic demo data and are regenerated with
+[`tools/screenshots/`](tools/screenshots/).</sub>
+
+### Create snippets & actions
+
+Build a reusable snippet or a one-keystroke action in seconds — type `{clipboard}`
+to weave in whatever you copied last.
+
+| New snippet | New action |
+|---|---|
+| ![Creating a snippet](assets/demo-snippet.gif) | ![Creating an action](assets/demo-action.gif) |
+
+<sub>Demos use generic demo data and are regenerated with
 [`tools/screenshots/`](tools/screenshots/).</sub>
 
 ## Install
