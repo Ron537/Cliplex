@@ -6,6 +6,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-07-05
+
+### Bug Fixes
+
+- Fixed a crash when opening Settings → Shortcuts.
+
 ## [0.2.0] - 2026-07-02
 
 ### Features
@@ -38,6 +44,7 @@ First public release.
   database is entirely local with no network access or telemetry.
 - Native macOS menu-bar app (AppKit + SwiftUI), bundled fonts, light/dark theme.
 
-[Unreleased]: https://github.com/Ron537/Cliplex/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Ron537/Cliplex/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/Ron537/Cliplex/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/Ron537/Cliplex/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Ron537/Cliplex/releases/tag/v0.1.0

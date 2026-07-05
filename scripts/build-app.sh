@@ -45,6 +45,16 @@ mkdir -p "$BIN_DIR" "$RES_DIR"
 cp "$BIN_PATH" "$BIN_DIR/Cliplex"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 
+# Copy SwiftPM resource bundles (e.g. KeyboardShortcuts_KeyboardShortcuts.bundle,
+# GRDB_GRDB.bundle) next to the binary. Packages that use `Bundle.module` (the
+# KeyboardShortcuts recorder loads localized strings this way) trap at runtime
+# if their resource bundle is missing — omitting these crashed Settings →
+# Shortcuts.
+BIN_DIR_SRC="$(dirname "$BIN_PATH")"
+for bundle in "$BIN_DIR_SRC"/*.bundle; do
+  [ -e "$bundle" ] && cp -R "$bundle" "$RES_DIR/"
+done
+
 # App icon (Finder / Applications / Dock) and the monochrome menu-bar template.
 [ -f Resources/AppIcon.icns ] && cp Resources/AppIcon.icns "$RES_DIR/AppIcon.icns"
 for f in MenuBarIconTemplate.png "MenuBarIconTemplate@2x.png"; do
